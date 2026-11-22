@@ -38,6 +38,10 @@ final class SettingsPage implements Page {
         return Strings.get().tabSettings;
     }
 
+    public long refreshMs() {
+        return 1000;
+    }
+
     public void onShow() {
     }
 

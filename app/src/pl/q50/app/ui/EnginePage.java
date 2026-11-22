@@ -19,6 +19,10 @@ final class EnginePage implements Page {
         return Strings.get().tabEngine;
     }
 
+    public long refreshMs() {
+        return 250;
+    }
+
     public void onShow() {
     }
 

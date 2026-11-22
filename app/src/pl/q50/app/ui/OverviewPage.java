@@ -34,6 +34,10 @@ final class OverviewPage implements Page {
         return Strings.get().tabOverview;
     }
 
+    public long refreshMs() {
+        return 200;
+    }
+
     public void onShow() {
     }
 
@@ -107,11 +111,8 @@ final class OverviewPage implements Page {
         c.drawText(ch.formatted(), (l + r) / 2, (t + b) / 2 + th.px(size * 0.37f), th.bold(size, color, Paint.Align.CENTER));
         c.drawText(d.unit(), r - th.px(10), b - th.px(10), th.text(14, Theme.DIM, Paint.Align.RIGHT));
         if (!"gear".equals(d.format)) {
-            String range = "max " + d.formatRaw(ch.max);
-            if (d.key.startsWith("g_")) {
-                range = "min " + d.formatRaw(ch.min) + "  max " + d.formatRaw(ch.max);
-            }
-            c.drawText(range, l + th.px(10), b - th.px(10), th.text(12, Theme.DIM, Paint.Align.LEFT));
+            c.drawText(ch.extremesText(d.key.startsWith("g_")), l + th.px(10), b - th.px(10),
+                    th.text(12, Theme.DIM, Paint.Align.LEFT));
         }
     }
 

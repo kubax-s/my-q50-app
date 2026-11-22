@@ -1,6 +1,10 @@
 package pl.q50.app.data;
 
-/** Live state of one Android sensor (= one vehicle signal on InTouch). */
+/**
+ * Live state of one Android sensor (= one vehicle signal on InTouch).
+ * Written by the sensor thread ({@link #onValues}), read by the UI thread: {@code eventCount} is
+ * volatile and written last, so a reader that sees a new count also sees the new values.
+ */
 public final class Channel {
     /** History length: 20 s at the 10 Hz sampling tick. */
     public static final int HISTORY = 200;
@@ -17,7 +21,7 @@ public final class Channel {
     /** Latest values[]; SensorEvent on Android 2.3 carries up to 3 floats. */
     public final float[] values = new float[3];
     public int valueCount;
-    public long eventCount;
+    public volatile int eventCount;
     public long lastEventMs;
     public float rateHz;
     public float min = Float.NaN;
@@ -26,8 +30,25 @@ public final class Channel {
     private final float[] history = new float[HISTORY];
     private int historyPos;
     private int historyCount;
-    private long rateBaseCount;
+    private int rateBaseCount;
     private long rateBaseMs;
+
+    // Formatted text is cached and only rebuilt when a new value arrives (no per-frame garbage).
+    private int fmtCount = -1;
+    private String fmtCache;
+    private int rawCount = -1;
+    private final String[] rawCache = new String[3];
+    private float rangeMin = Float.NaN;
+    private float rangeMax = Float.NaN;
+    private String rangeCache = "";
+    private float maxKey = Float.NaN;
+    private String maxCache = "—";
+    private float minKey = Float.NaN;
+    private String minCache = "—";
+    private float exMin = Float.NaN;
+    private float exMax = Float.NaN;
+    private boolean exWithMin;
+    private String exCache = "";
 
     public Channel(int type, String name, String vendor, boolean vehicle, boolean demo,
                    float maxRange, float resolution) {
@@ -79,10 +100,72 @@ public final class Channel {
     }
 
     public String formatted() {
-        if (!hasValue()) {
+        int n = eventCount;
+        if (n == 0) {
             return "—";
         }
-        return def == null ? Fmt.raw(values[0]) : def.formatRaw(values[0]);
+        if (n != fmtCount) {
+            fmtCache = def == null ? Fmt.raw(values[0]) : def.formatRaw(values[0]);
+            fmtCount = n;
+        }
+        return fmtCache;
+    }
+
+    /** values[k] as raw text, cached per event. */
+    public String rawText(int k) {
+        int n = eventCount;
+        if (n == 0 || k >= valueCount) {
+            return "—";
+        }
+        if (n != rawCount) {
+            for (int i = 0; i < rawCache.length; i++) {
+                rawCache[i] = i < valueCount ? Fmt.raw(values[i]) : "—";
+            }
+            rawCount = n;
+        }
+        return rawCache[k];
+    }
+
+    /** "min … max" of raw values[0], cached until the range changes. */
+    public String rangeText() {
+        if (!hasValue()) {
+            return "";
+        }
+        if (Float.compare(min, rangeMin) != 0 || Float.compare(max, rangeMax) != 0) {
+            rangeMin = min;
+            rangeMax = max;
+            rangeCache = Fmt.raw(min) + " … " + Fmt.raw(max);
+        }
+        return rangeCache;
+    }
+
+    /** Maximum, converted and formatted with the signal definition; cached. */
+    public String maxText() {
+        if (Float.compare(max, maxKey) != 0) {
+            maxKey = max;
+            maxCache = Float.isNaN(max) ? "—" : def == null ? Fmt.raw(max) : def.formatRaw(max);
+        }
+        return maxCache;
+    }
+
+    /** "max X" or "min Y  max X" caption, cached until the extremes change. */
+    public String extremesText(boolean withMin) {
+        if (Float.compare(min, exMin) != 0 || Float.compare(max, exMax) != 0 || withMin != exWithMin || exCache.length() == 0) {
+            exMin = min;
+            exMax = max;
+            exWithMin = withMin;
+            exCache = withMin ? "min " + minText() + "  max " + maxText() : "max " + maxText();
+        }
+        return exCache;
+    }
+
+    /** Minimum, converted and formatted with the signal definition; cached. */
+    public String minText() {
+        if (Float.compare(min, minKey) != 0) {
+            minKey = min;
+            minCache = Float.isNaN(min) ? "—" : def == null ? Fmt.raw(min) : def.formatRaw(min);
+        }
+        return minCache;
     }
 
     public void resetMinMax() {

@@ -28,6 +28,10 @@ final class GMeterPage implements Page {
         return Strings.get().tabGMeter;
     }
 
+    public long refreshMs() {
+        return 100;
+    }
+
     public void onShow() {
     }
 

@@ -24,26 +24,53 @@ final class LogPage implements Page {
     private final RectF startBtn = new RectF();
     private final RectF markerBtn = new RectF();
     private final RectF rescanBtn = new RectF();
-    private final List<RectF> optionRects = new ArrayList<RectF>();
+    private static final int MAX_OPTIONS = 12;
+    private final RectF[] optionRects = new RectF[MAX_OPTIONS];
+    private int optionCount;
+    private final android.os.Handler ui = new android.os.Handler();
+    private boolean scanning;
+    private java.util.List<String> hintLines;
+    private String hintKey;
 
     LogPage(DataHub hub, CsvLogger logger, AppHost host) {
         this.hub = hub;
         this.logger = logger;
         this.host = host;
+        for (int i = 0; i < MAX_OPTIONS; i++) optionRects[i] = new RectF();
     }
 
     public String title() {
         return Strings.get().tabLog;
     }
 
+    public long refreshMs() {
+        return 500;
+    }
+
     public void onShow() {
-        if (options.isEmpty()) {
+        if (options.isEmpty() && !scanning) {
             rescan();
         }
     }
 
+    /** Probing mounts writes test files (possibly to a slow USB stick): done off the UI thread. */
     private void rescan() {
-        options = Storage.scan();
+        scanning = true;
+        new Thread("storage-scan") {
+            public void run() {
+                final List<Storage.Option> found = Storage.scan();
+                ui.post(new Runnable() {
+                    public void run() {
+                        scanning = false;
+                        applyScan(found);
+                    }
+                });
+            }
+        }.start();
+    }
+
+    private void applyScan(List<Storage.Option> found) {
+        options = found;
         chosen = -1;
         String saved = host.savedStoragePath();
         for (int i = 0; i < options.size(); i++) {
@@ -73,12 +100,17 @@ final class LogPage implements Page {
                 on ? Theme.ACCENT : Theme.PANEL, on ? Theme.BG : Theme.DIM, 26);
         Paint hint = th.text(13, Theme.DIM, Paint.Align.LEFT);
         float hy = markerBtn.bottom + th.px(24);
-        StringBuilder all = new StringBuilder();
-        for (int i = 0; i < t.logHints.length; i++) {
-            if (i > 0) all.append(' ');
-            all.append(t.logHints[i]);
+        String key = t.code + (int) colW;
+        if (!key.equals(hintKey)) { // wrap once per language/width, not every frame
+            StringBuilder all = new StringBuilder();
+            for (int i = 0; i < t.logHints.length; i++) {
+                if (i > 0) all.append(' ');
+                all.append(t.logHints[i]);
+            }
+            hintLines = Theme.wrap(hint, all.toString(), colW);
+            hintKey = key;
         }
-        java.util.List<String> lines = Theme.wrap(hint, all.toString(), colW);
+        java.util.List<String> lines = hintLines;
         for (int i = 0; i < lines.size() && hy + th.px(17) * i < a.bottom; i++) {
             c.drawText(lines.get(i), a.left, hy + th.px(17) * i, hint);
         }
@@ -93,7 +125,7 @@ final class LogPage implements Page {
         String[][] status = {
                 {t.state, on ? t.recording : t.stopped},
                 {t.file, logger.file() == null ? "—" : logger.file().getName()},
-                {t.size, logger.file() == null ? "—" : Fmt.bytes(logger.file().length())},
+                {t.size, logger.file() == null ? "—" : Fmt.bytes(logger.bytes())},
                 {t.time, Fmt.duration(logger.elapsedMs())},
                 {t.rows, Integer.toString(logger.rows())},
                 {t.sensors, Integer.toString(on ? logger.columnCount() : hub.channels().size())},
@@ -116,23 +148,26 @@ final class LogPage implements Page {
         th.button(c, rescanBtn, t.rescan, Theme.PANEL_HI, Theme.TEXT, 14);
         float oy = st + th.px(16);
         float rowH = th.px(34);
-        optionRects.clear();
-        for (int i = 0; i < options.size() && oy + rowH <= a.bottom; i++) {
+        optionCount = 0;
+        for (int i = 0; i < options.size() && i < MAX_OPTIONS && oy + rowH <= a.bottom; i++) {
             Storage.Option o = options.get(i);
-            RectF r = new RectF(x, oy, a.right, oy + rowH - th.px(4));
-            optionRects.add(r);
+            RectF r = optionRects[i];
+            r.set(x, oy, a.right, oy + rowH - th.px(4));
+            optionCount = i + 1;
             th.panel(c, r.left, r.top, r.right, r.bottom, i == chosen ? Theme.PANEL_HI : Theme.PANEL);
             if (i == chosen) {
                 th.outline(c, r.left, r.top, r.right, r.bottom, Theme.ACCENT, 2);
             }
             Paint p = th.text(15, o.writable ? Theme.TEXT : Theme.DIM, Paint.Align.LEFT);
-            c.drawText(Theme.fit(p, o.logDir().getAbsolutePath(), r.width() - th.px(110)), r.left + th.px(10),
+            c.drawText(Theme.fit(p, o.displayPath, r.width() - th.px(110)), r.left + th.px(10),
                     r.centerY() + th.px(5), p);
             c.drawText(o.writable ? t.writable : t.readOnly, r.right - th.px(10), r.centerY() + th.px(5),
                     th.text(13, o.writable ? Theme.OK : Theme.DIM, Paint.Align.RIGHT));
             oy += rowH;
         }
-        if (options.isEmpty()) {
+        if (scanning && options.isEmpty()) {
+            c.drawText(t.scanning, x, oy + th.px(20), th.text(14, Theme.DIM, Paint.Align.LEFT));
+        } else if (options.isEmpty()) {
             c.drawText(t.noStorage, x, oy + th.px(20),
                     th.text(14, Theme.HOT, Paint.Align.LEFT));
         }
@@ -155,13 +190,13 @@ final class LogPage implements Page {
         if (rescanBtn.contains(x, y)) {
             if (logger.isActive()) {
                 host.message(Strings.get().stopBeforeChange);
-            } else {
+            } else if (!scanning) {
                 rescan();
             }
             return true;
         }
-        for (int i = 0; i < optionRects.size(); i++) {
-            if (optionRects.get(i).contains(x, y)) {
+        for (int i = 0; i < optionCount; i++) {
+            if (optionRects[i].contains(x, y)) {
                 if (logger.isActive()) {
                     host.message(Strings.get().stopBeforeChange);
                 } else if (!options.get(i).writable) {

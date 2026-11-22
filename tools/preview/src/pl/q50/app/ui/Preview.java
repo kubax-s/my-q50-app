@@ -299,12 +299,51 @@ public final class Preview {
         ImageIO.write(strip, "png", new File("build/preview/pl/turbo-levels.png"));
     }
 
-    public static void main(String[] args) throws IOException {
-        Preview p = new Preview();
-        p.run();
-        SystemClock.now = p.t;
+    /** Average draw time and bytes allocated per frame for every tab (--bench). */
+    private void bench(AppHost host) {
+        com.sun.management.ThreadMXBean mx = (com.sun.management.ThreadMXBean) java.lang.management.ManagementFactory.getThreadMXBean();
+        long tid = Thread.currentThread().getId();
+        Strings.setLanguage(Strings.PL);
+        RootView root = new RootView(new Context(), hub, logger, analytics, host);
+        root.setPreviewSize(800, 480);
+        BufferedImage img = new BufferedImage(800, 480, BufferedImage.TYPE_INT_RGB);
+        String[] names = {"overview", "alerts", "engine", "trip", "gmeter", "sensors", "log", "settings"};
+        int frames = 200;
+        android.graphics.Canvas.dryRun = true;
+        android.graphics.Paint.fastMeasure = true;
+        Canvas canvas = new Canvas(img);
+        System.out.println("app code only (drawing skipped):");
+        System.out.println("tab        us/frame   bytes alloc/frame   draw calls/frame");
+        long totalBytes = 0;
+        for (int page = 0; page < names.length; page++) {
+            root.showPage(page);
+            for (int i = 0; i < 200; i++) root.onDraw(canvas); // warm-up
+            for (int i = 0; i < frames; i++) tick();
+            long drawNs = 0;
+            long drawBytes = 0;
+            long calls0 = android.graphics.Canvas.calls;
+            for (int i = 0; i < frames; i++) {
+                tick(); // live data changes every frame, like in the car
+                SystemClock.now = t;
+                long b0 = mx.getThreadAllocatedBytes(tid);
+                long n0 = System.nanoTime();
+                root.onDraw(canvas);
+                drawNs += System.nanoTime() - n0;
+                drawBytes += mx.getThreadAllocatedBytes(tid) - b0;
+            }
+            totalBytes += drawBytes;
+            System.out.printf("%-10s %8.1f %14d %16d%n", names[page], drawNs / 1e3 / frames, drawBytes / frames,
+                    (android.graphics.Canvas.calls - calls0) / frames);
+        }
+        // the tick alone (sampling + analytics), without drawing
+        long b0 = mx.getThreadAllocatedBytes(tid);
+        for (int i = 0; i < 1000; i++) tick();
+        System.out.printf("tick (sampling + analytics, harness included): %d bytes/tick%n",
+                (mx.getThreadAllocatedBytes(tid) - b0) / 1000);
+    }
 
-        AppHost host = new AppHost() {
+    static AppHost benchHost() {
+        return new AppHost() {
             public void toggleLogging(Storage.Option target) {
             }
 
@@ -325,7 +364,56 @@ public final class Preview {
             }
 
             public String versionText() {
-                return "0.4.4 (preview)";
+                return "0.5.0 (preview)";
+            }
+
+            public int vehicleSensorCount() {
+                return 42;
+            }
+
+            public void settingsChanged() {
+            }
+
+            public void analyticsChanged() {
+            }
+        };
+    }
+
+    public static void main(String[] args) throws IOException {
+        Preview p = new Preview();
+        p.run();
+        SystemClock.now = p.t;
+        if (args.length > 0 && args[0].equals("--bench")) {
+            p.bench(benchHost());
+            return;
+        }
+
+        AppHost host = benchHost();
+        if (host == null) {
+            return;
+        }
+        AppHost unused = new AppHost() {
+            public void toggleLogging(Storage.Option target) {
+            }
+
+            public void marker() {
+            }
+
+            public void message(String text) {
+            }
+
+            public String savedStoragePath() {
+                return null;
+            }
+
+            public void saveStoragePath(String path) {
+            }
+
+            public void setLanguage(String code) {
+            }
+
+            public String versionText() {
+                return "0.5.0 (preview)";
             }
 
             public int vehicleSensorCount() {

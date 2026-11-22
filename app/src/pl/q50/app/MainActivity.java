@@ -38,7 +38,7 @@ import pl.q50.app.ui.RootView;
 public final class MainActivity extends Activity {
     private static final long TICK_MS = 100;
     private static final String PREFS = "q50";
-    private static final long SAVE_EVERY_MS = 30000;
+    private static final long SAVE_EVERY_MS = 60000;
 
     private DataHub hub;
     private VehicleSensorSource vehicle;
@@ -54,6 +54,8 @@ public final class MainActivity extends Activity {
     private Store store;
     private final Snapshot snap = new Snapshot();
     private long lastSaveMs;
+    private long lastDrawMs;
+    private int lastSignature;
     private long shownResultAt;
     private ToneGenerator tone;
 
@@ -65,8 +67,15 @@ public final class MainActivity extends Activity {
             analytics.update(snap, System.currentTimeMillis());
             logger.writeRow(now);
             onAnalyticsTick(now);
-            if (visible) {
-                root.invalidate();
+            vehicle.setFullRate(visible && root.isSensorExplorer());
+            if (visible && now - lastDrawMs >= root.refreshMs(now)) {
+                // redraw only if a value changed, something time-driven is on screen, or every 5 s
+                int sig = hub.changeSignature();
+                if (sig != lastSignature || root.timeDriven(now) || now - lastDrawMs >= 5000) {
+                    lastSignature = sig;
+                    lastDrawMs = now;
+                    root.invalidate();
+                }
             }
             handler.postDelayed(this, TICK_MS);
         }
@@ -143,6 +152,7 @@ public final class MainActivity extends Activity {
         logger = new CsvLogger();
         root = new RootView(this, hub, logger, analytics, new Host());
         setContentView(root);
+        getWindow().setBackgroundDrawable(null); // the view is opaque; skip the window fill
         root.showPage(prefs.getInt("page", 0));
         if (hub.map.error != null) {
             root.message(hub.map.error);
@@ -176,7 +186,7 @@ public final class MainActivity extends Activity {
             tone.release();
         }
         logger.stop();
-        vehicle.stop();
+        vehicle.release();
         demo.dispose();
         stopTicking();
         super.onDestroy();
@@ -254,13 +264,21 @@ public final class MainActivity extends Activity {
         }
     }
 
+    /** Writes to flash only when a value actually changed. */
     private final class PrefsStore implements Store {
+        private final java.util.HashMap<String, String> written = new java.util.HashMap<String, String>();
+
         public String get(String key) {
             return prefs.getString(key, null);
         }
 
         public void put(String key, String value) {
+            String last = written.containsKey(key) ? written.get(key) : prefs.getString(key, null);
+            if (value == null ? last == null : value.equals(last)) {
+                return;
+            }
             prefs.edit().putString(key, value).commit();
+            written.put(key, value);
         }
     }
 }

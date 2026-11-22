@@ -27,6 +27,10 @@ final class AlertsPage implements Page {
         return Strings.get().tabAlerts;
     }
 
+    public long refreshMs() {
+        return 500;
+    }
+
     public void onShow() {
     }
 

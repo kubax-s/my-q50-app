@@ -5,6 +5,8 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.os.Build;
+import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.SystemClock;
 
 import java.util.HashMap;
@@ -15,12 +17,22 @@ import java.util.Map;
  * Reads every sensor the head unit exposes. On InTouch the vehicle CAN signals appear as
  * sensors with vendor "Ygomi", names "VS_ID_*" and types 12..53. Other sensors (if any) are
  * listed too, so the explorer shows the complete picture.
+ *
+ * Load on the head unit: events are delivered on a background thread (never the UI thread),
+ * and each sensor is requested only as fast as it is needed – the app samples everything at
+ * 10 Hz anyway. Only the sensor explorer asks for the full rate, to show real update rates.
  */
 public final class VehicleSensorSource implements SensorEventListener {
     private final SensorManager sm;
     private final DataHub hub;
+    /** Signals the UI animates (≈16 Hz); everything else is fine at ≈5 Hz. */
+    private static final String[] FAST_KEYS = {"rpm", "speed", "throttle", "torque", "power", "g_lat", "g_long", "gear"};
+
     private final Map<Sensor, Channel> channels = new HashMap<Sensor, Channel>();
+    private HandlerThread thread;
+    private Handler handler;
     private boolean registered;
+    private boolean fullRate;
 
     public VehicleSensorSource(SensorManager sm, DataHub hub) {
         this.sm = sm;
@@ -54,14 +66,44 @@ public final class VehicleSensorSource implements SensorEventListener {
         return channels.size();
     }
 
+    private static boolean isFast(Channel c) {
+        if (c.def == null) return false;
+        for (int i = 0; i < FAST_KEYS.length; i++) {
+            if (FAST_KEYS[i].equals(c.def.key)) return true;
+        }
+        return false;
+    }
+
+    private int rateFor(Channel c) {
+        if (fullRate) return SensorManager.SENSOR_DELAY_GAME;
+        return isFast(c) ? SensorManager.SENSOR_DELAY_UI : SensorManager.SENSOR_DELAY_NORMAL;
+    }
+
     public void start() {
         if (sm == null || registered) {
             return;
         }
-        for (Sensor s : channels.keySet()) {
-            sm.registerListener(this, s, SensorManager.SENSOR_DELAY_GAME);
+        if (thread == null) {
+            thread = new HandlerThread("vehicle-sensors");
+            thread.start();
+            handler = new Handler(thread.getLooper());
+        }
+        for (Map.Entry<Sensor, Channel> e : channels.entrySet()) {
+            sm.registerListener(this, e.getKey(), rateFor(e.getValue()), handler);
         }
         registered = true;
+    }
+
+    /** Full sensor rate while the sensor explorer is on screen; reduced otherwise. */
+    public void setFullRate(boolean full) {
+        if (full == fullRate) {
+            return;
+        }
+        fullRate = full;
+        if (registered) {
+            stop();
+            start();
+        }
     }
 
     public void stop() {
@@ -70,6 +112,16 @@ public final class VehicleSensorSource implements SensorEventListener {
         }
         sm.unregisterListener(this);
         registered = false;
+    }
+
+    /** Stops listening and ends the background thread. */
+    public void release() {
+        stop();
+        if (thread != null) {
+            thread.quit();
+            thread = null;
+            handler = null;
+        }
     }
 
     public void onSensorChanged(SensorEvent event) {

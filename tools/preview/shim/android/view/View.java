@@ -33,6 +33,10 @@ public class View {
     public void invalidate() {
     }
 
+    public boolean isOpaque() {
+        return false;
+    }
+
     protected void onDraw(Canvas c) {
     }
 

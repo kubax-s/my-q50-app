@@ -1,6 +1,7 @@
 package pl.q50.app.ui;
 
 import android.content.Context;
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.RectF;
@@ -40,6 +41,9 @@ public final class RootView extends View {
     private final RectF banner = new RectF();
     private final RectF bannerOk = new RectF();
     private final Handler handler = new Handler();
+    private final int sensorsIndex;
+    private Bitmap tabCache;
+    private int tabKey = Integer.MIN_VALUE;
     private int current;
     private String message;
     private long messageUntil;
@@ -79,12 +83,41 @@ public final class RootView extends View {
             if (pages[i] == logPage) log = i;
         }
         logIndex = log;
+        int sensors = 0;
+        for (int i = 0; i < pages.length; i++) {
+            if (pages[i] instanceof SensorsPage) sensors = i;
+        }
+        sensorsIndex = sensors;
         tabRects = new RectF[pages.length];
         for (int i = 0; i < pages.length; i++) {
             tabRects[i] = new RectF();
         }
         setKeepScreenOn(true);
-        setBackgroundColor(Theme.BG);
+        // no background drawable: onDraw paints every pixel (avoids a second full-screen fill)
+    }
+
+    /** Fully opaque: the system does not need to draw anything behind this view. */
+    @Override
+    public boolean isOpaque() {
+        return true;
+    }
+
+    /** Redraw interval the current page needs, shorter while a message or REC is shown. */
+    public long refreshMs(long now) {
+        long ms = pages[current].refreshMs();
+        if (logger.isActive() || (message != null && now < messageUntil)) {
+            ms = Math.min(ms, 500);
+        }
+        return ms;
+    }
+
+    /** True when something on screen changes with time even if no sensor value changed. */
+    public boolean timeDriven(long now) {
+        return logger.isActive() || (message != null && now < messageUntil + 500);
+    }
+
+    public boolean isSensorExplorer() {
+        return current == sensorsIndex;
     }
 
     public int currentPage() {
@@ -110,7 +143,46 @@ public final class RootView extends View {
         c.drawColor(Theme.BG);
         Strings t = Strings.get();
 
-        // tab bar: equal-width tabs across the full width
+        float tabBottom = th.px(TAB_H);
+        if (logger.isActive()) {
+            drawTabs(c, now, t); // the REC timer blinks: draw directly
+        } else {
+            // static while idle: render once into a bitmap, then just copy it each frame
+            int key = (current * 31 + (t.en ? 1 : 0)) * 31 + getWidth();
+            if (tabCache == null || key != tabKey || tabCache.getWidth() != getWidth()) {
+                if (tabCache == null || tabCache.getWidth() != getWidth()) {
+                    if (tabCache != null) tabCache.recycle();
+                    tabCache = Bitmap.createBitmap(getWidth(), Math.max(1, (int) tabBottom), Bitmap.Config.RGB_565);
+                }
+                Canvas bc = new Canvas();
+                bc.setBitmap(tabCache);
+                bc.drawColor(Theme.BG);
+                drawTabs(bc, now, t);
+                tabKey = key;
+            }
+            c.drawBitmap(tabCache, 0, 0, null);
+        }
+
+        List<AlertEngine.Alert> alerts = analytics.alerts.visible();
+        float bottom = getHeight() - th.px(MARGIN);
+        if (!alerts.isEmpty()) {
+            bottom -= th.px(BANNER_H + 6);
+        }
+        area.set(th.px(MARGIN), tabBottom + th.px(4), getWidth() - th.px(MARGIN), bottom);
+        pages[current].draw(c, area, th, now);
+
+        drawBanner(c, alerts, t);
+
+        if (message != null && now < messageUntil) {
+            float h = th.px(40);
+            float b = area.bottom - th.px(8);
+            th.panel(c, th.px(80), b - h, getWidth() - th.px(80), b, 0xEE303844);
+            c.drawText(message, getWidth() / 2f, b - h / 2 + th.px(6), th.bold(16, Theme.TEXT, Paint.Align.CENTER));
+        }
+    }
+
+    private void drawTabs(Canvas c, long now, Strings t) {
+        // equal-width tabs across the full width
         float gap = th.px(4);
         float left = th.px(MARGIN);
         float tabW = (getWidth() - 2 * left - gap * (pages.length - 1)) / pages.length;
@@ -139,22 +211,6 @@ public final class RootView extends View {
             }
         }
 
-        List<AlertEngine.Alert> alerts = analytics.alerts.visible();
-        float bottom = getHeight() - th.px(MARGIN);
-        if (!alerts.isEmpty()) {
-            bottom -= th.px(BANNER_H + 6);
-        }
-        area.set(th.px(MARGIN), tabBottom + th.px(4), getWidth() - th.px(MARGIN), bottom);
-        pages[current].draw(c, area, th, now);
-
-        drawBanner(c, alerts, t);
-
-        if (message != null && now < messageUntil) {
-            float h = th.px(40);
-            float b = area.bottom - th.px(8);
-            th.panel(c, th.px(80), b - h, getWidth() - th.px(80), b, 0xEE303844);
-            c.drawText(message, getWidth() / 2f, b - h / 2 + th.px(6), th.bold(16, Theme.TEXT, Paint.Align.CENTER));
-        }
     }
 
     private void drawBanner(Canvas c, List<AlertEngine.Alert> alerts, Strings t) {

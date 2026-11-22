@@ -83,6 +83,15 @@ public final class DataHub {
         return false;
     }
 
+    /** Changes whenever any channel receives a value; used to skip redraws when nothing moved. */
+    public int changeSignature() {
+        int sig = 0;
+        for (int i = 0; i < channels.size(); i++) {
+            sig = sig * 31 + channels.get(i).eventCount;
+        }
+        return sig;
+    }
+
     public void sample(long nowMs) {
         for (int i = 0; i < channels.size(); i++) {
             channels.get(i).sample(nowMs);

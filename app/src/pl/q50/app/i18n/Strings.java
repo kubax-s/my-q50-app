@@ -64,6 +64,7 @@ public final class Strings {
     public final String errorPrefix;
     public final String storageTitle;
     public final String rescan;
+    public final String scanning;
     public final String writable;
     public final String readOnly;
     public final String noStorage;
@@ -212,6 +213,7 @@ public final class Strings {
         errorPrefix = en ? "Error: " : "Błąd: ";
         storageTitle = en ? "STORAGE" : "MIEJSCE ZAPISU";
         rescan = en ? "SCAN" : "SKANUJ";
+        scanning = en ? "Scanning…" : "Skanowanie…";
         writable = en ? "writable" : "zapis OK";
         readOnly = en ? "read-only" : "tylko odczyt";
         noStorage = en ? "No writable storage – insert a USB stick and press SCAN"

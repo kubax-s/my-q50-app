@@ -72,22 +72,52 @@ public class Paint {
         return MEASURE.getFontMetrics(font());
     }
 
+    /** Benchmark mode: allocation-free width from cached per-size metrics (like native Skia). */
+    public static boolean fastMeasure;
+    private static final FontMetrics[][] CACHE = new FontMetrics[2][4000];
+
+    private FontMetrics cachedMetrics() {
+        int b = typeface != null && typeface.bold ? 1 : 0;
+        int k = Math.min(3999, Math.round(textSize * 10));
+        FontMetrics fm = CACHE[b][k];
+        if (fm == null) {
+            fm = MEASURE.getFontMetrics(font());
+            CACHE[b][k] = fm;
+        }
+        return fm;
+    }
+
     public float measureText(String s) {
+        if (fastMeasure) {
+            FontMetrics fm = cachedMetrics();
+            int w = 0;
+            for (int i = 0; i < s.length(); i++) w += fm.charWidth(s.charAt(i));
+            return w;
+        }
         return (float) font().getStringBounds(s, MEASURE.getFontRenderContext()).getWidth();
     }
 
     public float ascent() {
-        return -metrics().getAscent();
+        return -(fastMeasure ? cachedMetrics() : metrics()).getAscent();
     }
 
     public float descent() {
-        return metrics().getDescent();
+        return (fastMeasure ? cachedMetrics() : metrics()).getDescent();
     }
 
     public int breakText(String text, boolean measureForwards, float maxWidth, float[] measuredWidth) {
         int n = 0;
-        while (n < text.length() && measureText(text.substring(0, n + 1)) <= maxWidth) {
-            n++;
+        if (fastMeasure) {
+            FontMetrics fm = cachedMetrics();
+            int w = 0;
+            while (n < text.length() && w + fm.charWidth(text.charAt(n)) <= maxWidth) {
+                w += fm.charWidth(text.charAt(n));
+                n++;
+            }
+        } else {
+            while (n < text.length() && measureText(text.substring(0, n + 1)) <= maxWidth) {
+                n++;
+            }
         }
         if (measuredWidth != null && measuredWidth.length > 0) {
             measuredWidth[0] = measureText(text.substring(0, n));

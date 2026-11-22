@@ -41,24 +41,27 @@ public final class Analytics {
         alerts.update(s.now, settings);
     }
 
+    /** Alert texts are only built while a condition holds, so a quiet drive allocates nothing here. */
     private void evaluateAlerts(Snapshot s) {
         Strings t = Strings.get();
 
         boolean coolantHot = Snapshot.ok(s.coolant)
                 && s.coolant >= (alerts.isActive(AlertEngine.COOLANT_HOT) ? COOLANT_HOT_OFF : COOLANT_HOT_ON);
-        alerts.set(AlertEngine.COOLANT_HOT, coolantHot, t.alertCoolantHot(Fmt.number(s.coolant, 0)));
+        alerts.set(AlertEngine.COOLANT_HOT, coolantHot, coolantHot ? t.alertCoolantHot(Fmt.number(s.coolant, 0)) : null);
 
         boolean oilHot = Snapshot.ok(s.oilTemp)
                 && s.oilTemp >= (alerts.isActive(AlertEngine.OIL_HOT) ? OIL_HOT_OFF : OIL_HOT_ON);
-        alerts.set(AlertEngine.OIL_HOT, oilHot, t.alertOilHot(Fmt.number(s.oilTemp, 0)));
+        alerts.set(AlertEngine.OIL_HOT, oilHot, oilHot ? t.alertOilHot(Fmt.number(s.oilTemp, 0)) : null);
 
-        alerts.set(AlertEngine.OIL_PRESS_LOW, oil.belowAbsolute(s), t.alertOilPressLow(Fmt.number(s.oilPress, 1)));
+        boolean pressLow = oil.belowAbsolute(s);
+        alerts.set(AlertEngine.OIL_PRESS_LOW, pressLow, pressLow ? t.alertOilPressLow(Fmt.number(s.oilPress, 1)) : null);
 
         boolean belowBaseline = oil.belowBaseline(s);
         alerts.set(AlertEngine.OIL_PRESS_BASELINE, belowBaseline,
                 belowBaseline ? t.alertOilPressBaseline(Fmt.number(s.oilPress, 1), Fmt.number(oil.expected(s.rpm), 1)) : null);
 
-        alerts.set(AlertEngine.COLD_OIL_LOAD, WarmUp.coldOilUnderLoad(s), t.alertColdOil(Fmt.number(s.oilTemp, 0)));
+        boolean coldOil = WarmUp.coldOilUnderLoad(s);
+        alerts.set(AlertEngine.COLD_OIL_LOAD, coldOil, coldOil ? t.alertColdOil(Fmt.number(s.oilTemp, 0)) : null);
 
         int low = TyreMonitor.lowTyre(s.tyres);
         alerts.set(AlertEngine.TYRE_LOW, low >= 0, low >= 0 ? t.alertTyreLow(t.tyreShort[low], Fmt.number(s.tyres[low], 2)) : null);
@@ -72,8 +75,8 @@ public final class Analytics {
                 leak >= 0 ? t.alertTyreLeak(t.tyreShort[leak], Fmt.number(tyres.leakDropBar, 2), tyres.leakDays) : null);
 
         boolean cooldown = s.engineRunning() && s.parked() && turbo.needsCooldown();
-        alerts.set(AlertEngine.TURBO_COOLDOWN, cooldown, t.alertTurboZone(turbo.level(),
-                (int) Math.ceil(turbo.secondsUntilOk()), (int) Math.ceil(turbo.remainingS())));
+        alerts.set(AlertEngine.TURBO_COOLDOWN, cooldown, cooldown ? t.alertTurboZone(turbo.level(),
+                (int) Math.ceil(turbo.secondsUntilOk()), (int) Math.ceil(turbo.remainingS())) : null);
     }
 
     public void load(Store store) {

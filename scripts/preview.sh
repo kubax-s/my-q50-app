@@ -15,4 +15,4 @@ APP_SRC=$(find app/src -name '*.java' ! -name MainActivity.java ! -name VehicleS
 # shellcheck disable=SC2086
 javac --release 8 -Xlint:-options -encoding UTF-8 -nowarn -d "$OUT" -classpath "$JSON_JAR" \
   $(find tools/preview/shim -name '*.java') $APP_SRC $(find tools/preview/src -name '*.java')
-java -Djava.awt.headless=true -cp "$OUT:$JSON_JAR" pl.q50.app.ui.Preview
+java -Djava.awt.headless=true -cp "$OUT:$JSON_JAR" pl.q50.app.ui.Preview "$@"

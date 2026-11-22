@@ -35,6 +35,8 @@ public final class CsvLogger {
     private int markers;
     private int pendingMarker;
     private volatile String error;
+    /** Bytes handed to the writer; avoids asking the file system for the size on every frame. */
+    private volatile long bytes;
 
     public boolean isActive() {
         return writer != null;
@@ -54,6 +56,10 @@ public final class CsvLogger {
 
     public int markers() {
         return markers;
+    }
+
+    public long bytes() {
+        return bytes;
     }
 
     public int columnCount() {
@@ -93,6 +99,7 @@ public final class CsvLogger {
         file = csv;
         startMs = SystemClock.uptimeMillis();
         rows = 0;
+        bytes = 0;
         markers = 0;
         pendingMarker = 0;
         thread = new HandlerThread("csv-logger");
@@ -135,6 +142,7 @@ public final class CsvLogger {
             public void run() {
                 try {
                     w.write(line);
+                    bytes += line.length();
                     if (flush) {
                         w.flush();
                     }

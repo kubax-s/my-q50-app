@@ -46,6 +46,10 @@ final class SensorsPage implements Page {
         return Strings.get().tabSensors;
     }
 
+    public long refreshMs() {
+        return 200;
+    }
+
     public void onShow() {
     }
 
@@ -138,12 +142,12 @@ final class SensorsPage implements Page {
 
         Paint vp = th.bold(15, fg, Paint.Align.LEFT);
         for (int k = 0; k < 3; k++) {
-            String v = ch.hasValue() && k < ch.valueCount ? Fmt.raw(ch.values[k]) : "—";
+            String v = ch.rawText(k);
             c.drawText(Theme.fit(vp, v, th.px(k == 0 ? 76 : 66)), col[2 + k], y, vp);
         }
         String hz = !ch.hasValue() ? "—" : Fmt.number(ch.rateHz, ch.rateHz < 10 ? 1 : 0);
         c.drawText(hz, col[5], y, th.text(14, Theme.DIM, Paint.Align.LEFT));
-        String range = ch.hasValue() ? Fmt.raw(ch.min) + " … " + Fmt.raw(ch.max) : "";
+        String range = ch.rangeText();
         Paint rp = th.text(13, ch.varies() ? Theme.OK : Theme.DIM, Paint.Align.LEFT);
         c.drawText(Theme.fit(rp, range, table.right - col[6] - th.px(4)), col[6], y, rp);
     }

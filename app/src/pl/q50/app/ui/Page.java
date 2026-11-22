@@ -13,4 +13,7 @@ public interface Page {
     boolean onTap(float x, float y);
 
     void onShow();
+
+    /** How often the page needs redrawing while data changes (ms); taps always redraw at once. */
+    long refreshMs();
 }

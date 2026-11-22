@@ -28,6 +28,13 @@ final class TripPage implements Page {
         return Strings.get().tabTrip;
     }
 
+    public long refreshMs() {
+        for (int r = 0; r < pl.q50.app.logic.PerfTimer.COUNT; r++) {
+            if (an.perf.isRunning(r)) return 100; // live 0.1 s timer
+        }
+        return 500;
+    }
+
     public void onShow() {
     }
 

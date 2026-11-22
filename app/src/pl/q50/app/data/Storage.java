@@ -18,10 +18,13 @@ public final class Storage {
     public static final class Option {
         public final File root;
         public final boolean writable;
+        /** Shown in the UI; computed once instead of on every frame. */
+        public final String displayPath;
 
         Option(File root, boolean writable) {
             this.root = root;
             this.writable = writable;
+            this.displayPath = new File(root, DIR_NAME).getAbsolutePath();
         }
 
         public File logDir() {
