@@ -35,7 +35,7 @@ final class OverviewPage implements Page {
     }
 
     public long refreshMs() {
-        return 200;
+        return 250;
     }
 
     public void onShow() {

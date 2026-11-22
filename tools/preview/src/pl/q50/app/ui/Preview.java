@@ -342,6 +342,19 @@ public final class Preview {
                 (mx.getThreadAllocatedBytes(tid) - b0) / 1000);
     }
 
+    private static long usedHeap() {
+        for (int i = 0; i < 4; i++) {
+            System.gc();
+            try {
+                Thread.sleep(50);
+            } catch (InterruptedException ignored) {
+                // just measuring
+            }
+        }
+        Runtime r = Runtime.getRuntime();
+        return r.totalMemory() - r.freeMemory();
+    }
+
     static AppHost benchHost() {
         return new AppHost() {
             public void toggleLogging(Storage.Option target) {
@@ -364,7 +377,7 @@ public final class Preview {
             }
 
             public String versionText() {
-                return "0.5.0 (preview)";
+                return "0.5.1 (preview)";
             }
 
             public int vehicleSensorCount() {
@@ -380,10 +393,17 @@ public final class Preview {
     }
 
     public static void main(String[] args) throws IOException {
+        boolean bench = args.length > 0 && args[0].equals("--bench");
+        long heap0 = bench ? usedHeap() : 0;
         Preview p = new Preview();
         p.run();
         SystemClock.now = p.t;
-        if (args.length > 0 && args[0].equals("--bench")) {
+        if (bench) {
+            RootView probe = new RootView(new Context(), p.hub, p.logger, p.analytics, benchHost());
+            long heap1 = usedHeap();
+            System.out.printf("app state on the heap after %d s of driving (69 sensors, all pages): %d KB%n",
+                    p.t / 1000, (heap1 - heap0) / 1024);
+            probe.isOpaque();
             p.bench(benchHost());
             return;
         }
@@ -413,7 +433,7 @@ public final class Preview {
             }
 
             public String versionText() {
-                return "0.5.0 (preview)";
+                return "0.5.1 (preview)";
             }
 
             public int vehicleSensorCount() {

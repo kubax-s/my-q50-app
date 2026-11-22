@@ -56,6 +56,22 @@ According to appgarage-dash there are **~42 live signals**. Mapped so far:
 
 **~27 sensor types remain unmapped** – that is our field of discovery (stage 2).
 
+### 1.5 Head unit resources
+
+What is known about the hardware and what other apps run with – the basis for the app's limits:
+
+| Resource | Known | Source | App setting |
+|---|---|---|---|
+| CPU | Intel Atom (likely E6xx, visual ID from the board) | [infinitiq50.org RE thread](https://www.infinitiq50.org/threads/intouch-reverse-engineering-findings-more-to-come.137236/page-3) | software rendering kept light |
+| OS | Android 2.3.7.0936, x86, root present | [doudineugene-dot/q50](https://github.com/doudineugene-dot/q50) `docs/head-unit-findings.md` | API 10, no native code |
+| Screen | 800×480, 240 dpi (hdpi) | same | layout on an 800×480 grid; 72 px hdpi icon |
+| RAM / per-app heap | **not published** (Q50 Info displays it) | — | ~0.45 MB app data, no large bitmaps |
+| `/mnt/sdcard` | **tmpfs = RAM**; USB mounted elsewhere | doudineugene-dot/q50 | logs prefer real USB; RAM capped at 2 MB |
+| UI refresh | 4 Hz "validated on the InTouch without ANRs" | [rayrmzz/Q50-Telemetry](https://github.com/rayrmzz/Q50-Telemetry) | ≤ 4 Hz |
+| Sensor periods | 200 ms (Q50-Telemetry), 100 ms (q50dash), GAME for ~10 fast + 200 ms (appgarage-dash, Q50-Digital-Twin) | GitHub | 100 ms fast / 200 ms rest |
+| Lifecycle | other apps unregister in `onPause` (Q50-Telemetry after 5 s) | GitHub | background mode: 13 signals at 200 ms, 2 Hz tick |
+| Sensors | 42 vehicle sensors, 39 live with engine off; 18 = distance to empty, 19 = instant fuel consumption | doudineugene-dot/q50 `docs/can-signals.md` | added to the sensor map (unverified) |
+
 ### 1.4 Technical consequences
 
 - **React Native / modern Android are out** – API 10, Dalvik, no Gradle (AGP does not support such a low `minSdk`).

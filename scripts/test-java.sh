@@ -8,6 +8,9 @@ rm -rf "$OUT" && mkdir -p "$OUT"
 javac --release 8 -Xlint:all,-options -Werror -encoding UTF-8 -d "$OUT" \
   app/src/pl/q50/app/data/Fmt.java app/src/pl/q50/app/data/SignalDef.java app/src/pl/q50/app/data/Channel.java \
   app/src/pl/q50/app/i18n/Strings.java $(find app/src/pl/q50/app/logic -name '*.java') \
+  app/src/pl/q50/app/data/Storage.java app/src/pl/q50/app/data/CsvLogger.java \
+  $(find tools/preview/shim/android/os -name '*.java') \
   $(find app/test -name '*.java')
 java -cp "$OUT" pl.q50.app.data.DataTest
+java -cp "$OUT" pl.q50.app.data.StorageTest
 java -cp "$OUT" pl.q50.app.logic.LogicTest

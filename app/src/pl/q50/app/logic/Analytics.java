@@ -20,6 +20,8 @@ public final class Analytics {
     public final OilPressureMonitor oil = new OilPressureMonitor();
     public final TyreMonitor tyres = new TyreMonitor();
     public final AlertEngine alerts = new AlertEngine();
+    /** False while the app runs lean in the background: acceleration timing is paused. */
+    public boolean timingEnabled = true;
     /** Latest snapshot, for pages that draw live markers. */
     public Snapshot last;
 
@@ -30,7 +32,9 @@ public final class Analytics {
     public void update(Snapshot s, long wallMs) {
         last = s;
         trip.update(s);
-        perf.update(s);
+        if (timingEnabled) {
+            perf.update(s);
+        }
         dyno.update(s);
         gMeter.update(s);
         turbo.update(s);

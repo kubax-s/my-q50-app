@@ -29,6 +29,8 @@ public final class RootView extends View {
     private static final float BANNER_H = 48;
     private static final long MESSAGE_MS = 3000;
     private static final long LONG_PRESS_MS = 700;
+    /** Fastest redraw: 4 Hz, as validated on InTouch by Q50-Telemetry. */
+    static final long MIN_FRAME_MS = 250;
 
     private final Theme th = new Theme();
     private final Page[] pages;
@@ -108,12 +110,22 @@ public final class RootView extends View {
         if (logger.isActive() || (message != null && now < messageUntil)) {
             ms = Math.min(ms, 500);
         }
-        return ms;
+        // never faster than 4 Hz: the rate other InTouch apps run without "not responding" errors
+        return Math.max(MIN_FRAME_MS, ms);
     }
 
     /** True when something on screen changes with time even if no sensor value changed. */
     public boolean timeDriven(long now) {
         return logger.isActive() || (message != null && now < messageUntil + 500);
+    }
+
+    /** Frees memory that is rebuilt on demand (the cached tab bar). */
+    public void releaseCaches() {
+        if (tabCache != null) {
+            tabCache.recycle();
+            tabCache = null;
+        }
+        tabKey = Integer.MIN_VALUE;
     }
 
     public boolean isSensorExplorer() {

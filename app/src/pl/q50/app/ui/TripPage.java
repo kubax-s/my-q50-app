@@ -30,7 +30,7 @@ final class TripPage implements Page {
 
     public long refreshMs() {
         for (int r = 0; r < pl.q50.app.logic.PerfTimer.COUNT; r++) {
-            if (an.perf.isRunning(r)) return 100; // live 0.1 s timer
+            if (an.perf.isRunning(r)) return 250; // live timer, at the 4 Hz ceiling
         }
         return 500;
     }

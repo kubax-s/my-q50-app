@@ -47,7 +47,7 @@ final class SensorsPage implements Page {
     }
 
     public long refreshMs() {
-        return 200;
+        return 250;
     }
 
     public void onShow() {

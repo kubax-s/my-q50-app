@@ -78,8 +78,9 @@ final class LogPage implements Page {
                 chosen = i;
             }
         }
+        // never pick RAM (tmpfs) on its own: only a real disk with room is chosen automatically
         for (int i = 0; chosen < 0 && i < options.size(); i++) {
-            if (options.get(i).writable) {
+            if (options.get(i).recommended()) {
                 chosen = i;
             }
         }
@@ -125,7 +126,7 @@ final class LogPage implements Page {
         String[][] status = {
                 {t.state, on ? t.recording : t.stopped},
                 {t.file, logger.file() == null ? "—" : logger.file().getName()},
-                {t.size, logger.file() == null ? "—" : Fmt.bytes(logger.bytes())},
+                {t.size, logger.file() == null ? "—" : Fmt.bytes(logger.bytes()) + " / " + Fmt.bytes(logger.maxBytes())},
                 {t.time, Fmt.duration(logger.elapsedMs())},
                 {t.rows, Integer.toString(logger.rows())},
                 {t.sensors, Integer.toString(on ? logger.columnCount() : hub.channels().size())},
@@ -159,10 +160,22 @@ final class LogPage implements Page {
                 th.outline(c, r.left, r.top, r.right, r.bottom, Theme.ACCENT, 2);
             }
             Paint p = th.text(15, o.writable ? Theme.TEXT : Theme.DIM, Paint.Align.LEFT);
-            c.drawText(Theme.fit(p, o.displayPath, r.width() - th.px(110)), r.left + th.px(10),
+            c.drawText(Theme.fit(p, o.displayPath, r.width() - th.px(190)), r.left + th.px(10),
                     r.centerY() + th.px(5), p);
-            c.drawText(o.writable ? t.writable : t.readOnly, r.right - th.px(10), r.centerY() + th.px(5),
-                    th.text(13, o.writable ? Theme.OK : Theme.DIM, Paint.Align.RIGHT));
+            String kind;
+            int kc;
+            if (!o.writable) {
+                kind = t.readOnly;
+                kc = Theme.DIM;
+            } else if (o.ram) {
+                kind = "RAM";
+                kc = Theme.ACCENT;
+            } else {
+                kind = (o.flash ? t.usbStorage : t.writable)
+                        + (o.freeBytes >= 0 ? " · " + Fmt.bytes(o.freeBytes) + " " + t.freeSuffix : "");
+                kc = o.recommended() ? Theme.OK : Theme.ACCENT;
+            }
+            c.drawText(kind, r.right - th.px(10), r.centerY() + th.px(5), th.text(13, kc, Paint.Align.RIGHT));
             oy += rowH;
         }
         if (scanning && options.isEmpty()) {
@@ -204,6 +217,9 @@ final class LogPage implements Page {
                 } else {
                     chosen = i;
                     host.saveStoragePath(options.get(i).root.getAbsolutePath());
+                    if (options.get(i).ram) {
+                        host.message(Strings.get().ramStorage);
+                    }
                 }
                 return true;
             }

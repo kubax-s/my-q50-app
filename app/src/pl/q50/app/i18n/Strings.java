@@ -65,6 +65,11 @@ public final class Strings {
     public final String storageTitle;
     public final String rescan;
     public final String scanning;
+    public final String logLimitReached;
+    public final String notEnoughSpace;
+    public final String ramStorage;
+    public final String usbStorage;
+    public final String freeSuffix;
     public final String writable;
     public final String readOnly;
     public final String noStorage;
@@ -214,6 +219,11 @@ public final class Strings {
         storageTitle = en ? "STORAGE" : "MIEJSCE ZAPISU";
         rescan = en ? "SCAN" : "SKANUJ";
         scanning = en ? "Scanning…" : "Skanowanie…";
+        logLimitReached = en ? "Log stopped: size limit for this storage reached" : "Log zatrzymany: osiągnięto limit rozmiaru";
+        notEnoughSpace = en ? "Not enough free space here" : "Za mało wolnego miejsca";
+        ramStorage = en ? "RAM – short tests only (max 2 MB)" : "RAM – tylko krótkie testy (maks. 2 MB)";
+        usbStorage = "USB";
+        freeSuffix = en ? "free" : "wolne";
         writable = en ? "writable" : "zapis OK";
         readOnly = en ? "read-only" : "tylko odczyt";
         noStorage = en ? "No writable storage – insert a USB stick and press SCAN"

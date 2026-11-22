@@ -1,5 +1,5 @@
 {
-  "_comment": "Android sensor type -> vehicle signal. Source: community findings on a VR30DDTT (bugjosh/appgarage-dash, oneezeeroo/Q50-Reverse-Engineering). 'verified' = confirmed on our own car. value = raw * scale + offset. label/unit = Polish, label_en/unit_en = English (unit_en defaults to unit).",
+  "_comment": "Android sensor type -> vehicle signal. Source: community findings on a VR30DDTT (bugjosh/appgarage-dash, oneezeeroo/Q50-Reverse-Engineering). 'verified' = confirmed on our own car. value = raw * scale + offset. label/unit = Polish, label_en/unit_en = English (unit_en defaults to unit). Types 18/19 named VS_ID_DISTANCE_TO_EMPTY / VS_ID_FUEL_CONSUMPTION_FINE on a live unit (doudineugene-dot/q50); units not confirmed.",
   "signals": [
     {"type": 12, "key": "torque", "label": "MOMENT", "label_en": "TORQUE", "unit": "Nm", "scale": 1, "decimals": 0, "verified": false},
     {"type": 13, "key": "rpm", "label": "OBROTY", "label_en": "RPM", "unit": "rpm", "scale": 1, "decimals": 0, "verified": false},
@@ -7,6 +7,8 @@
     {"type": 15, "key": "oil_temp", "label": "OLEJ", "label_en": "OIL TEMP", "unit": "°C", "scale": 1, "decimals": 0, "verified": false, "cold": 60, "hot": 125},
     {"type": 16, "key": "oil_press", "label": "CIŚN. OLEJU", "label_en": "OIL PRESS.", "unit": "bar", "scale": 10, "decimals": 1, "verified": false},
     {"type": 17, "key": "speed", "label": "PRĘDKOŚĆ", "label_en": "SPEED", "unit": "km/h", "scale": 1, "decimals": 0, "verified": false},
+    {"type": 18, "key": "range", "label": "ZASIĘG", "label_en": "RANGE", "unit": "km", "scale": 1, "decimals": 0, "verified": false},
+    {"type": 19, "key": "fuel_rate", "label": "SPALANIE CHWIL.", "label_en": "FUEL USE", "unit": "", "scale": 1, "decimals": 1, "verified": false},
     {"type": 20, "key": "g_lat", "label": "G BOK", "label_en": "LAT G", "unit": "g", "scale": 1, "decimals": 2, "verified": false},
     {"type": 21, "key": "g_long", "label": "G WZDŁ", "label_en": "LONG G", "unit": "g", "scale": 1, "decimals": 2, "verified": false},
     {"type": 22, "key": "gear", "label": "BIEG", "label_en": "GEAR", "unit": "", "scale": 1, "decimals": 0, "verified": false, "format": "gear"},

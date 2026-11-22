@@ -23,6 +23,10 @@ import pl.q50.app.i18n.Strings;
  *   q50_YYYYMMDD_HHMMSS.csv          t_ms, marker, s<type>_0, s<type>_1, s<type>_2, ...
  *   q50_YYYYMMDD_HHMMSS_sensors.txt  sensor list (type, name, vendor, range, mapping)
  * Rows are built on the UI thread and written on a background thread.
+ *
+ * To keep files small (and RAM use low when the target is a tmpfs), a value is only written
+ * when it differs from the previous row: an empty cell means "unchanged". The first row is
+ * complete. Logging stops by itself when the size cap of the target is reached.
  */
 public final class CsvLogger {
     private HandlerThread thread;
@@ -37,6 +41,10 @@ public final class CsvLogger {
     private volatile String error;
     /** Bytes handed to the writer; avoids asking the file system for the size on every frame. */
     private volatile long bytes;
+    /** Bytes queued for writing (UI thread); used for the size cap. */
+    private long queued;
+    private long maxBytes;
+    private float[] last;
 
     public boolean isActive() {
         return writer != null;
@@ -70,8 +78,12 @@ public final class CsvLogger {
         return error;
     }
 
+    public long maxBytes() {
+        return maxBytes;
+    }
+
     /** @return null on success, otherwise an error message. */
-    public String start(File dir, List<Channel> channels) {
+    public String start(File dir, List<Channel> channels, long capBytes) {
         if (isActive()) {
             return null;
         }
@@ -100,6 +112,10 @@ public final class CsvLogger {
         startMs = SystemClock.uptimeMillis();
         rows = 0;
         bytes = 0;
+        queued = 0;
+        maxBytes = capBytes;
+        last = new float[columns.size() * 3];
+        for (int i = 0; i < last.length; i++) last[i] = Float.NaN;
         markers = 0;
         pendingMarker = 0;
         thread = new HandlerThread("csv-logger");
@@ -115,10 +131,16 @@ public final class CsvLogger {
         }
     }
 
-    /** Called from the UI thread at the sampling tick. */
-    public void writeRow(long nowMs) {
+    /**
+     * Called from the UI thread at the sampling tick.
+     * @return false when the size cap is reached (the caller should stop logging).
+     */
+    public boolean writeRow(long nowMs) {
         if (!isActive()) {
-            return;
+            return true;
+        }
+        if (maxBytes > 0 && queued >= maxBytes) {
+            return false;
         }
         StringBuilder sb = new StringBuilder(32 + columns.size() * 24);
         sb.append(nowMs - startMs).append(',');
@@ -131,11 +153,17 @@ public final class CsvLogger {
             for (int k = 0; k < 3; k++) {
                 sb.append(',');
                 if (c.hasValue() && k < c.valueCount) {
-                    sb.append(c.values[k]);
+                    float v = c.values[k];
+                    int idx = i * 3 + k;
+                    if (Float.floatToIntBits(v) != Float.floatToIntBits(last[idx])) {
+                        sb.append(v);
+                        last[idx] = v;
+                    }
                 }
             }
         }
         final String line = sb.append('\n').toString();
+        queued += line.length();
         final boolean flush = (++rows % 10) == 0;
         final Writer w = writer;
         io.post(new Runnable() {
@@ -151,6 +179,7 @@ public final class CsvLogger {
                 }
             }
         });
+        return true;
     }
 
     public void stop() {
@@ -158,7 +187,10 @@ public final class CsvLogger {
             return;
         }
         final Writer w = writer;
+        final HandlerThread t = thread;
         writer = null;
+        // Close on the writer thread after the queued rows, then end that thread. (Quitting
+        // the looper first could drop the pending rows and the close.)
         io.post(new Runnable() {
             public void run() {
                 try {
@@ -166,9 +198,9 @@ public final class CsvLogger {
                 } catch (IOException e) {
                     error = e.getMessage();
                 }
+                t.quit();
             }
         });
-        thread.quit();
         thread = null;
         io = null;
     }

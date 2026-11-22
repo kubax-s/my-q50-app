@@ -11,7 +11,8 @@
 #   KEY_ALIAS       key alias (default: "q50")
 #
 # Icon: app/res/drawable/ic_launcher.png (from tools/icon/MakeIcon.java). To use your own image
-# instead, put a square PNG at app/icon-override.png (git-ignored); it is scaled to 96×96.
+# instead, put a square PNG at app/icon-override.png (git-ignored); it is scaled to 48 px (mdpi)
+# and 72 px (hdpi – the InTouch screen is 240 dpi).
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -75,7 +76,8 @@ RES="$APP/res"
 if [ -f "$APP/icon-override.png" ]; then
   step "icon: using app/icon-override.png"
   rm -rf "$OUT/res" && cp -r "$APP/res" "$OUT/res"
-  java -Djava.awt.headless=true tools/icon/ScaleIcon.java "$APP/icon-override.png" 96 "$OUT/res/drawable/ic_launcher.png"
+  java -Djava.awt.headless=true tools/icon/ScaleIcon.java "$APP/icon-override.png" 48 "$OUT/res/drawable/ic_launcher.png"
+  java -Djava.awt.headless=true tools/icon/ScaleIcon.java "$APP/icon-override.png" 72 "$OUT/res/drawable-hdpi/ic_launcher.png"
   RES="$OUT/res"
 fi
 

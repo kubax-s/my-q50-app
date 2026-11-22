@@ -19,20 +19,36 @@ import java.util.Map;
  * listed too, so the explorer shows the complete picture.
  *
  * Load on the head unit: events are delivered on a background thread (never the UI thread),
- * and each sensor is requested only as fast as it is needed – the app samples everything at
- * 10 Hz anyway. Only the sensor explorer asks for the full rate, to show real update rates.
+ * and each sensor is requested only as fast as it is needed. The periods follow what other
+ * InTouch apps run with: 100 ms for the signals the UI animates, 200 ms for the rest. In the
+ * background only the signals the analytics need stay subscribed (200 ms).
  */
 public final class VehicleSensorSource implements SensorEventListener {
+    /** Foreground: all sensors, fast signals at 100 ms, the rest at 200 ms. */
+    public static final int MODE_FOREGROUND = 0;
+    /** Sensor explorer on screen: every sensor at 100 ms, to show real update rates up to 10 Hz. */
+    public static final int MODE_EXPLORER = 1;
+    /** App not visible and not logging: only what trip, alerts and cool-down need, at 200 ms. */
+    public static final int MODE_BACKGROUND = 2;
+
+    static final int FAST_US = 100000;
+    static final int SLOW_US = 200000;
+
+    /** Signals the UI animates and the timing uses. */
+    private static final String[] FAST_KEYS = {"rpm", "speed", "throttle", "torque", "power", "g_lat", "g_long", "gear"};
+    /** Signals the analytics need while the app is in the background. */
+    private static final String[] BACKGROUND_KEYS = {"rpm", "speed", "throttle", "power", "torque", "gear",
+            "coolant", "oil_temp", "oil_press", "tpms_fl", "tpms_fr", "tpms_rl", "tpms_rr"};
+
     private final SensorManager sm;
     private final DataHub hub;
-    /** Signals the UI animates (≈16 Hz); everything else is fine at ≈5 Hz. */
-    private static final String[] FAST_KEYS = {"rpm", "speed", "throttle", "torque", "power", "g_lat", "g_long", "gear"};
-
     private final Map<Sensor, Channel> channels = new HashMap<Sensor, Channel>();
     private HandlerThread thread;
     private Handler handler;
     private boolean registered;
-    private boolean fullRate;
+    private int mode = MODE_FOREGROUND;
+    private int subscribed;
+    private int failed;
 
     public VehicleSensorSource(SensorManager sm, DataHub hub) {
         this.sm = sm;
@@ -40,8 +56,13 @@ public final class VehicleSensorSource implements SensorEventListener {
         if (sm == null) {
             return;
         }
-        List<Sensor> sensors = sm.getSensorList(Sensor.TYPE_ALL);
-        for (int i = 0; i < sensors.size(); i++) {
+        List<Sensor> sensors;
+        try {
+            sensors = sm.getSensorList(Sensor.TYPE_ALL);
+        } catch (RuntimeException e) {
+            return; // vendor sensor HAL failure: run without sensors (demo mode)
+        }
+        for (int i = 0; sensors != null && i < sensors.size(); i++) {
             Sensor s = sensors.get(i);
             Channel c = new Channel(s.getType(), s.getName(), s.getVendor(), isVehicle(s), false,
                     s.getMaximumRange(), s.getResolution());
@@ -66,17 +87,33 @@ public final class VehicleSensorSource implements SensorEventListener {
         return channels.size();
     }
 
-    private static boolean isFast(Channel c) {
+    /** Sensors currently subscribed / registrations the system refused. */
+    public int subscribedCount() {
+        return subscribed;
+    }
+
+    public int failedCount() {
+        return failed;
+    }
+
+    private static boolean keyIn(Channel c, String[] keys) {
         if (c.def == null) return false;
-        for (int i = 0; i < FAST_KEYS.length; i++) {
-            if (FAST_KEYS[i].equals(c.def.key)) return true;
+        for (int i = 0; i < keys.length; i++) {
+            if (keys[i].equals(c.def.key)) return true;
         }
         return false;
     }
 
-    private int rateFor(Channel c) {
-        if (fullRate) return SensorManager.SENSOR_DELAY_GAME;
-        return isFast(c) ? SensorManager.SENSOR_DELAY_UI : SensorManager.SENSOR_DELAY_NORMAL;
+    /** Requested period in microseconds, or 0 when the sensor is not needed in this mode. */
+    static int periodUs(int mode, boolean fast, boolean neededInBackground) {
+        switch (mode) {
+            case MODE_EXPLORER:
+                return FAST_US;
+            case MODE_BACKGROUND:
+                return neededInBackground ? SLOW_US : 0;
+            default:
+                return fast ? FAST_US : SLOW_US;
+        }
     }
 
     public void start() {
@@ -88,18 +125,32 @@ public final class VehicleSensorSource implements SensorEventListener {
             thread.start();
             handler = new Handler(thread.getLooper());
         }
+        subscribed = 0;
+        failed = 0;
         for (Map.Entry<Sensor, Channel> e : channels.entrySet()) {
-            sm.registerListener(this, e.getKey(), rateFor(e.getValue()), handler);
+            Channel c = e.getValue();
+            int us = periodUs(mode, keyIn(c, FAST_KEYS), keyIn(c, BACKGROUND_KEYS));
+            if (us == 0) continue;
+            try {
+                // the int is a period in µs on API 9+; events arrive on our thread
+                if (sm.registerListener(this, e.getKey(), us, handler)) {
+                    subscribed++;
+                } else {
+                    failed++;
+                }
+            } catch (RuntimeException ex) {
+                failed++; // SecurityException / IllegalArgumentException from the vendor HAL
+            }
         }
         registered = true;
     }
 
-    /** Full sensor rate while the sensor explorer is on screen; reduced otherwise. */
-    public void setFullRate(boolean full) {
-        if (full == fullRate) {
+    /** Re-subscribes with the rates of the given mode (no-op if unchanged). */
+    public void setMode(int newMode) {
+        if (newMode == mode) {
             return;
         }
-        fullRate = full;
+        mode = newMode;
         if (registered) {
             stop();
             start();
@@ -110,8 +161,13 @@ public final class VehicleSensorSource implements SensorEventListener {
         if (sm == null || !registered) {
             return;
         }
-        sm.unregisterListener(this);
+        try {
+            sm.unregisterListener(this);
+        } catch (RuntimeException ignored) {
+            // nothing else to do
+        }
         registered = false;
+        subscribed = 0;
     }
 
     /** Stops listening and ends the background thread. */

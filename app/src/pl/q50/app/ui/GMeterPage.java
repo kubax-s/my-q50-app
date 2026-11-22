@@ -29,7 +29,7 @@ final class GMeterPage implements Page {
     }
 
     public long refreshMs() {
-        return 100;
+        return 250;
     }
 
     public void onShow() {

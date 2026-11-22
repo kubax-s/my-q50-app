@@ -36,7 +36,10 @@ import pl.q50.app.ui.RootView;
  * turbo cool-down estimate stay correct when another app is on screen.
  */
 public final class MainActivity extends Activity {
+    /** Sampling tick while the app is on screen or logging. */
     private static final long TICK_MS = 100;
+    /** Sampling tick in the background: enough for trip, alerts and turbo cool-down. */
+    private static final long BACKGROUND_TICK_MS = 500;
     private static final String PREFS = "q50";
     private static final long SAVE_EVERY_MS = 60000;
 
@@ -62,12 +65,19 @@ public final class MainActivity extends Activity {
     private final Runnable tick = new Runnable() {
         public void run() {
             long now = SystemClock.uptimeMillis();
+            boolean foreground = visible || logger.isActive();
             hub.sample(now);
             fillSnapshot(now);
+            // acceleration timing needs the 10 Hz tick; skipped while running lean in the background
+            analytics.timingEnabled = foreground;
             analytics.update(snap, System.currentTimeMillis());
-            logger.writeRow(now);
+            if (!logger.writeRow(now)) {
+                logger.stop();
+                root.message(Strings.get().logLimitReached);
+            }
             onAnalyticsTick(now);
-            vehicle.setFullRate(visible && root.isSensorExplorer());
+            vehicle.setMode(visible && root.isSensorExplorer() ? VehicleSensorSource.MODE_EXPLORER
+                    : foreground ? VehicleSensorSource.MODE_FOREGROUND : VehicleSensorSource.MODE_BACKGROUND);
             if (visible && now - lastDrawMs >= root.refreshMs(now)) {
                 // redraw only if a value changed, something time-driven is on screen, or every 5 s
                 int sig = hub.changeSignature();
@@ -77,7 +87,7 @@ public final class MainActivity extends Activity {
                     root.invalidate();
                 }
             }
-            handler.postDelayed(this, TICK_MS);
+            handler.postDelayed(this, foreground ? TICK_MS : BACKGROUND_TICK_MS);
         }
     };
 
@@ -174,9 +184,16 @@ public final class MainActivity extends Activity {
     protected void onPause() {
         super.onPause();
         visible = false;
-        prefs.edit().putInt("page", root.currentPage()).commit();
+        prefs.edit().putInt("page", root.currentPage()).apply();
         analytics.save(store);
         // Sensors and the tick keep running in the background (trip, cool-down, logging).
+    }
+
+    /** The system is short of memory: drop what can be rebuilt. */
+    @Override
+    public void onLowMemory() {
+        super.onLowMemory();
+        root.releaseCaches();
     }
 
     @Override
@@ -211,7 +228,12 @@ public final class MainActivity extends Activity {
                 root.message(Strings.get().savedRows(logger.rows()));
                 return;
             }
-            String err = logger.start(target.logDir(), hub.channels());
+            long cap = target.logCap();
+            if (cap < 64 * 1024) {
+                root.message(Strings.get().notEnoughSpace);
+                return;
+            }
+            String err = logger.start(target.logDir(), hub.channels(), cap);
             root.message(err != null ? err : Strings.get().loggingTo(logger.file().getName()));
         }
 
@@ -233,12 +255,12 @@ public final class MainActivity extends Activity {
         }
 
         public void saveStoragePath(String path) {
-            prefs.edit().putString("storage", path).commit();
+            prefs.edit().putString("storage", path).apply();
         }
 
         public void setLanguage(String code) {
             Strings.setLanguage(code);
-            prefs.edit().putString("lang", Strings.get().code).commit();
+            prefs.edit().putString("lang", Strings.get().code).apply();
             root.invalidate();
         }
 
@@ -277,7 +299,7 @@ public final class MainActivity extends Activity {
             if (value == null ? last == null : value.equals(last)) {
                 return;
             }
-            prefs.edit().putString(key, value).commit();
+            prefs.edit().putString(key, value).apply();
             written.put(key, value);
         }
     }
