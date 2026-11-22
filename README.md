@@ -2,7 +2,7 @@
 
 An app for the factory **InTouch** head unit in the Infiniti Q50 (V37, MY2014–2019), installed through **App Garage** from a USB stick. It reads the vehicle data that InTouch exposes to apps as Android sensors – no OBD adapter, no phone.
 
-Plan and analysis (Polish): [`docs/PLAN.md`](docs/PLAN.md).
+Plan and analysis: [`docs/PLAN.md`](docs/PLAN.md).
 
 ## Version 0.1 – Sensor explorer
 
