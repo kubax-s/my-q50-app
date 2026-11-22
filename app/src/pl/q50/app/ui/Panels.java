@@ -84,18 +84,76 @@ public final class Panels {
         th.panel(c, l, t, r, b, Theme.PANEL);
         title(c, th, tr.turboTitle, l, t);
         TurboCooldown tc = an.turbo;
+        float x0 = l + th.px(12);
+        float x1 = r - th.px(12);
         boolean need = tc.needsCooldown();
-        int color = need ? Theme.turboColor(tc.level()) : Theme.OK;
-        String big = need ? tr.turboSeconds(Math.round(tc.remainingS())) : tr.turboOk;
-        Paint bp = th.bold(30, color, Paint.Align.LEFT);
-        c.drawText(Theme.fit(bp, big, r - l - th.px(24)), l + th.px(12), t + th.px(64), bp);
-        bar(c, th, l + th.px(12), t + th.px(76), r - th.px(12), tc.fraction(), color);
+        int level = tc.level();
+        int color = need ? Theme.turboColor(level) : Theme.OK;
+
+        // headline: zone + seconds (to "OK" while red, to fully cooled otherwise)
+        String head = need ? tr.turboZone(level) : tr.turboOk;
+        int secs = (int) Math.ceil(level >= 2 ? tc.secondsUntilOk() : tc.remainingS());
+        Paint sp = th.bold(30, color, Paint.Align.RIGHT);
+        String num = need ? secs + " s" : "";
+        float numW = need ? sp.measureText(num) : 0;
+        if (need) c.drawText(num, x1, t + th.px(60), sp);
+        Paint hp = th.bold(19, color, Paint.Align.LEFT);
+        c.drawText(Theme.fit(hp, head, x1 - x0 - numW - th.px(10)), x0, t + th.px(58), hp);
+
+        turboBar(c, th, tc, x0, t + th.px(72), x1, t + th.px(90), need);
+
         Paint k = th.text(13, Theme.DIM, Paint.Align.LEFT);
-        c.drawText(Theme.fit(k, need ? tr.turboCooling : tr.turboHint, r - l - th.px(24)), l + th.px(12), t + th.px(112), k);
+        String line;
+        if (!need) {
+            line = tr.turboHint;
+        } else if (level >= 2) {
+            line = tr.turboOkIn((int) Math.ceil(tc.secondsUntilOk())) + " · " + tr.turboFullIn((int) Math.ceil(tc.remainingS()));
+        } else {
+            line = tr.turboFullIn((int) Math.ceil(tc.remainingS()));
+        }
+        c.drawText(Theme.fit(k, line, x1 - x0), x0, t + th.px(112), k);
         if (tc.oilSlowsCooling()) {
-            Paint hp = th.text(13, Theme.ACCENT, Paint.Align.LEFT);
-            c.drawText(Theme.fit(hp, tr.turboHotOil(Fmt.number(tc.oilTemp(), 0)), r - l - th.px(24)), l + th.px(12),
-                    t + th.px(132), hp);
+            Paint op = th.text(13, Theme.ACCENT, Paint.Align.LEFT);
+            c.drawText(Theme.fit(op, tr.turboHotOil(Fmt.number(tc.oilTemp(), 0)), x1 - x0), x0, t + th.px(132), op);
+        }
+    }
+
+    /**
+     * One bar, three zones laid out along the cool-down: red (don't switch off), orange (OK),
+     * green (extra margin). Time runs left to right; the part already waited is dimmed and a
+     * marker shows "now".
+     */
+    private static void turboBar(Canvas c, Theme th, TurboCooldown tc, float x0, float top, float x1, float bottom,
+                                 boolean need) {
+        float w = x1 - x0;
+        float scale = tc.scaleS();
+        float remaining = need ? tc.remainingS() : 0f;
+        float xRed = x0 + w * (1f - Math.min(scale, TurboCooldown.RED_S) / scale);
+        float xOrange = x0 + w * (1f - Math.min(scale, TurboCooldown.ORANGE_S) / scale);
+        float xNow = x0 + w * (1f - remaining / scale);
+        if (!need) {
+            th.panel(c, x0, top, x1, bottom, Theme.LINE);
+            return;
+        }
+        zone(c, th, x0, xRed, top, bottom, Theme.HOT, xNow);
+        zone(c, th, xRed, xOrange, top, bottom, Theme.ACCENT, xNow);
+        zone(c, th, xOrange, x1, top, bottom, Theme.OK, xNow);
+        // "now" marker
+        th.fill.setColor(Theme.TEXT);
+        c.drawRect(xNow - th.px(1.5f), top - th.px(4), xNow + th.px(1.5f), bottom + th.px(4), th.fill);
+    }
+
+    private static void zone(Canvas c, Theme th, float from, float to, float top, float bottom, int color, float xNow) {
+        if (to <= from) return;
+        // waited part: dimmed
+        float split = Math.max(from, Math.min(to, xNow));
+        if (split > from) {
+            th.fill.setColor((color & 0x00FFFFFF) | 0x40000000);
+            c.drawRect(from, top, split, bottom, th.fill);
+        }
+        if (to > split) {
+            th.fill.setColor(color);
+            c.drawRect(split, top, to, bottom, th.fill);
         }
     }
 

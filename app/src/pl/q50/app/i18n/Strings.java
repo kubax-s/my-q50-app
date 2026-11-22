@@ -116,7 +116,6 @@ public final class Strings {
     public final String oilWarmAfter;
     public final String warmStart;
     public final String turboTitle;
-    public final String turboCooling;
     public final String turboOk;
     public final String turboHint;
     public final String oilPressTitle;
@@ -267,7 +266,6 @@ public final class Strings {
         oilWarmAfter = en ? "Oil 80 °C after" : "Olej 80 °C po";
         warmStart = en ? "Warm start – no warm-up timing" : "Start na ciepłym silniku – bez pomiaru";
         turboTitle = "TURBO";
-        turboCooling = en ? "Idle to cool down" : "Schłodź na wolnych obrotach";
         turboOk = en ? "Turbos cooled down" : "Turbiny schłodzone";
         turboHint = en ? "After hard driving, idle before switching off" : "Po ostrej jeździe odczekaj przed zgaszeniem";
         oilPressTitle = en ? "OIL PRESSURE" : "CIŚNIENIE OLEJU";
@@ -371,9 +369,33 @@ public final class Strings {
                 : "Możliwy wolny wyciek: " + tyre + " −" + drop + " bar w " + days + " " + plural(days, "dzień", "dni", "dni");
     }
 
-    public String alertTurbo(int seconds) {
-        return en ? "Turbo cool-down: idle for " + seconds + " s more"
-                : "Schłodzenie turbin: jeszcze " + seconds + " s na wolnych obrotach";
+
+    public String turboZone(int level) {
+        if (level >= 2) return en ? "DON'T SWITCH OFF" : "NIE GAŚ SILNIKA";
+        if (level == 1) return en ? "OK TO SWITCH OFF" : "MOŻNA ZGASIĆ";
+        return en ? "EXTRA MARGIN" : "ZAPAS NA SPOKOJNIE";
+    }
+
+    public String turboOkIn(int seconds) {
+        return en ? "OK to switch off in " + seconds + " s" : "można zgasić za " + seconds + " s";
+    }
+
+    public String turboFullIn(int seconds) {
+        return en ? "fully cooled in " + seconds + " s" : "pełne schłodzenie za " + seconds + " s";
+    }
+
+    /** Alert banner text for the current zone. */
+    public String alertTurboZone(int level, int untilOk, int full) {
+        if (level >= 2) {
+            return en ? "Don't switch off – turbos need " + untilOk + " s more"
+                    : "Nie gaś silnika – turbiny jeszcze " + untilOk + " s";
+        }
+        if (level == 1) {
+            return en ? "Turbos: OK to switch off (fully cooled in " + full + " s)"
+                    : "Turbiny: można zgasić (pełne schłodzenie za " + full + " s)";
+        }
+        return en ? "Turbos almost cooled – " + full + " s extra margin"
+                : "Turbiny prawie schłodzone – zapas jeszcze " + full + " s";
     }
 
     public String turboHotOil(String temp) {
@@ -381,9 +403,6 @@ public final class Strings {
                 : "Gorący olej (" + temp + " °C) – schładzanie trwa dłużej";
     }
 
-    public String turboSeconds(int seconds) {
-        return en ? seconds + " s left" : "jeszcze " + seconds + " s";
-    }
 
     public String oilLearning(int learned, int total) {
         return en ? "Learning baseline: " + learned + "/" + total + " bands (warm oil)"

@@ -72,7 +72,8 @@ public final class Analytics {
                 leak >= 0 ? t.alertTyreLeak(t.tyreShort[leak], Fmt.number(tyres.leakDropBar, 2), tyres.leakDays) : null);
 
         boolean cooldown = s.engineRunning() && s.parked() && turbo.needsCooldown();
-        alerts.set(AlertEngine.TURBO_COOLDOWN, cooldown, t.alertTurbo(Math.round(turbo.remainingS())));
+        alerts.set(AlertEngine.TURBO_COOLDOWN, cooldown, t.alertTurboZone(turbo.level(),
+                (int) Math.ceil(turbo.secondsUntilOk()), (int) Math.ceil(turbo.remainingS())));
     }
 
     public void load(Store store) {

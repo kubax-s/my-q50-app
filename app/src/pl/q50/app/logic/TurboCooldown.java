@@ -19,9 +19,14 @@ public final class TurboCooldown {
     public static final float OIL_VERY_HOT_C = 120f;
     /** Remaining seconds above which the reminder is shown. */
     public static final float REMIND_S = 5f;
-    /** Levels of the remaining wait: at or above RED_S it really matters, below ORANGE_S almost done. */
+    /**
+     * Zones of the remaining wait. Above RED_S: do not switch off. Between ORANGE_S and RED_S:
+     * switching off is OK. Below ORANGE_S: an optional, conservative extra margin.
+     */
     public static final float RED_S = 45f;
     public static final float ORANGE_S = 15f;
+    /** Minimum scale of the cool-down bar, so all three zones are always visible. */
+    public static final float MIN_SCALE_S = 60f;
     public static final int LEVEL_GREEN = 0;
     public static final int LEVEL_ORANGE = 1;
     public static final int LEVEL_RED = 2;
@@ -29,6 +34,8 @@ public final class TurboCooldown {
     private static final long MAX_STEP_MS = 1000;
 
     private float neededS;
+    /** Highest remaining time since the cool-down last reached zero (bar scale). */
+    private float peakS;
     private long lastMs = -1;
     private long offMs;
     private float oil = Float.NaN;
@@ -39,6 +46,16 @@ public final class TurboCooldown {
 
     public float fraction() {
         return neededS / MAX_S;
+    }
+
+    /** Seconds until switching off is OK (the end of the red zone); 0 when already OK. */
+    public float secondsUntilOk() {
+        return Math.max(0f, neededS - RED_S);
+    }
+
+    /** Full length of the bar in seconds: the peak of this cool-down, at least MIN_SCALE_S. */
+    public float scaleS() {
+        return Math.max(MIN_SCALE_S, peakS);
     }
 
     public boolean needsCooldown() {
@@ -100,5 +117,10 @@ public final class TurboCooldown {
             neededS -= dt * 0.5f * coolFactor(oil);
         }
         neededS = Math.max(0f, Math.min(MAX_S, neededS));
+        if (neededS <= 0f) {
+            peakS = 0f;
+        } else if (neededS > peakS) {
+            peakS = neededS;
+        }
     }
 }

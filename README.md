@@ -30,7 +30,7 @@ Shown as a banner at the bottom of every tab; tapping it snoozes that alert for 
 | Low tyre pressure | any tyre < 2.0 bar |
 | One tyre lower | a tyre > 0.25 bar below the other three |
 | Slow tyre leak | a tyre lost > 0.15 bar more than the others over 2–14 days (session-start readings) |
-| Turbo cool-down | parked after hard driving – shows the remaining idle time (red ≥ 45 s, orange ≥ 15 s, green below). An estimate from engine load; hot oil (100–120 °C) builds it up to 1.5× faster and halves the cooling rate, since there is no turbo/exhaust temperature on the head unit |
+| Turbo cool-down | parked after hard driving – one bar with three zones and a "now" marker: red = don't switch off, orange = OK to switch off, green = optional extra margin (last 15 s). An estimate from engine load; hot oil (100–120 °C) builds it up to 1.5× faster and halves the cooling rate, since there is no turbo/exhaust temperature on the head unit |
 
 Thresholds are deliberately simple and live in [`app/src/pl/q50/app/logic/`](app/src/pl/q50/app/logic); they will be tuned once the signal scales are confirmed on the car. Records, the oil pressure baseline and tyre history are stored on the head unit.
 

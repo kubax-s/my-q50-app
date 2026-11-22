@@ -319,6 +319,8 @@ public final class LogicTest {
             c.update(s);
         }
         near("orange from 45 s", 45, Math.round(c.remainingS()), 1);
+        check(c.secondsUntilOk() < 0.5f, "OK to switch off once orange");
+        near("bar scale is the peak", 135, Math.round(c.scaleS()), 1);
         while (c.level() == TurboCooldown.LEVEL_ORANGE) {
             s.now = t += TICK;
             c.update(s);
