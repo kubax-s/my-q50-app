@@ -56,11 +56,13 @@ public final class Panels {
         int state = w.state();
         int color = state == WarmUp.COLD ? Theme.COLD : state == WarmUp.WARMING ? Theme.ACCENT : Theme.OK;
         String oil = s == null || Float.isNaN(s.oilTemp) ? "—" : Fmt.number(s.oilTemp, 0) + " °C";
-        c.drawText(oil, l + th.px(12), t + th.px(64), th.bold(36, state == WarmUp.UNKNOWN ? Theme.LINE : color, Paint.Align.LEFT));
+        Paint op = th.bold(36, state == WarmUp.UNKNOWN ? Theme.LINE : color, Paint.Align.LEFT);
+        c.drawText(oil, l + th.px(12), t + th.px(64), op);
+        float labelX = l + th.px(12) + op.measureText(oil) + th.px(14);
         String label = state == WarmUp.COLD ? tr.stateCold : state == WarmUp.WARMING ? tr.stateWarming
                 : state == WarmUp.WARM ? tr.stateWarm : tr.noData;
         Paint lp = th.bold(15, color, Paint.Align.LEFT);
-        c.drawText(Theme.fit(lp, label, r - l - th.px(150)), l + th.px(140), t + th.px(58), lp);
+        c.drawText(Theme.fit(lp, label, r - labelX - th.px(12)), labelX, t + th.px(60), lp);
         bar(c, th, l + th.px(12), t + th.px(76), r - th.px(12), w.progress(), color);
 
         Paint k = th.text(13, Theme.DIM, Paint.Align.LEFT);
@@ -127,6 +129,12 @@ public final class Panels {
             th.fill.setColor(trusted ? 0xFF3A4452 : 0xFF262C35);
             c.drawRect(cl + i * binW + th.px(1), y, cl + (i + 1) * binW - th.px(1), cb, th.fill);
         }
+        Paint ax = th.text(10, Theme.DIM, Paint.Align.CENTER);
+        for (int k1 = 2000; k1 <= 6000; k1 += 2000) {
+            float x = cl + (cr - cl) * k1 / (float) (OilPressureMonitor.BIN * OilPressureMonitor.BINS);
+            c.drawText((k1 / 1000) + "k", x, cb - th.px(3), ax);
+        }
+        c.drawText(Fmt.number(maxBar, 0) + " bar", cl + th.px(4), ct + th.px(12), th.text(10, Theme.DIM, Paint.Align.LEFT));
         if (!Float.isNaN(press) && !Float.isNaN(rpm)) {
             float x = cl + (cr - cl) * Math.min(1f, rpm / (OilPressureMonitor.BIN * OilPressureMonitor.BINS));
             float y = cb - (cb - ct) * Math.min(1f, press / maxBar);

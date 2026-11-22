@@ -19,8 +19,8 @@ import pl.q50.app.i18n.Strings;
  */
 final class SensorsPage implements Page {
     private static final float HEAD_H = 44;
-    private static final float ROW_H = 30;
-    private static final float DETAIL_H = 104;
+    private static final float ROW_H = 27;
+    private static final float DETAIL_H = 92;
     private static final float SIDE_W = 64;
 
     private final DataHub hub;
@@ -161,11 +161,11 @@ final class SensorsPage implements Page {
         float infoW = th.px(230);
         c.drawText(tr.typePrefix + ch.type + (ch.def != null ? " · " + ch.def.label() : ""), l + th.px(12), t + th.px(24),
                 th.bold(15, Theme.ACCENT, Paint.Align.LEFT));
-        c.drawText(ch.formatted() + (ch.def != null ? " " + ch.def.unit() : ""), l + th.px(12), t + th.px(66),
-                th.bold(34, Theme.TEXT, Paint.Align.LEFT));
+        c.drawText(ch.formatted() + (ch.def != null ? " " + ch.def.unit() : ""), l + th.px(12), t + th.px(58),
+                th.bold(30, Theme.TEXT, Paint.Align.LEFT));
         Paint sp = th.text(12, Theme.DIM, Paint.Align.LEFT);
         c.drawText(Theme.fit(sp, ch.vendor + " · " + tr.range + " " + Fmt.raw(ch.maxRange) + " · " + tr.resolution + " " + Fmt.raw(ch.resolution),
-                infoW - th.px(12)), l + th.px(12), t + th.px(92), sp);
+                infoW - th.px(12)), l + th.px(12), t + th.px(80), sp);
 
         // 20 s chart of raw v0, auto-scaled
         float cl = l + infoW;

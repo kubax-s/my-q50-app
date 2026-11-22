@@ -33,6 +33,7 @@ public final class LogicTest {
         warmUp();
         gMeter();
         alertHistory();
+        perfRejectsJumps();
         if (failures > 0) {
             System.out.println(failures + " FAILED");
             System.exit(1);
@@ -280,6 +281,21 @@ public final class LogicTest {
         s.oilTemp = 40;
         s.rpm = 4500;
         check(WarmUp.coldOilUnderLoad(s), "cold oil at 4500 rpm");
+    }
+
+    /** A data gap that makes speed jump 0 -> 60 -> 100 must not produce timing results. */
+    static void perfRejectsJumps() {
+        PerfTimer p = new PerfTimer();
+        Snapshot s = new Snapshot();
+        float[] v = {0, 0, 0, 60, 100, 0, 0, 120, 120};
+        for (int i = 0; i < v.length; i++) {
+            s.now = i * TICK;
+            s.speed = v[i];
+            p.update(s);
+        }
+        for (int r = 0; r < PerfTimer.COUNT; r++) {
+            check(p.last[r].timeMs < 0, "no result from a speed jump, run " + r);
+        }
     }
 
     static void gMeter() {

@@ -51,6 +51,14 @@ jobs:
           KEYSTORE_PASS: ${{ secrets.APK_KEYSTORE_PASS || 'android' }}
         run: bash scripts/build-apk.sh
 
+      - name: Render UI preview
+        run: bash scripts/preview.sh
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: q50-preview-${{ github.run_number }}
+          path: build/preview/
+
       - uses: actions/upload-artifact@v4
         with:
           name: q50-monitor-${{ github.run_number }}

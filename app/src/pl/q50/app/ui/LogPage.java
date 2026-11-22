@@ -73,8 +73,14 @@ final class LogPage implements Page {
                 on ? Theme.ACCENT : Theme.PANEL, on ? Theme.BG : Theme.DIM, 26);
         Paint hint = th.text(13, Theme.DIM, Paint.Align.LEFT);
         float hy = markerBtn.bottom + th.px(24);
+        StringBuilder all = new StringBuilder();
         for (int i = 0; i < t.logHints.length; i++) {
-            c.drawText(t.logHints[i], a.left, hy + th.px(18) * i, hint);
+            if (i > 0) all.append(' ');
+            all.append(t.logHints[i]);
+        }
+        java.util.List<String> lines = Theme.wrap(hint, all.toString(), colW);
+        for (int i = 0; i < lines.size() && hy + th.px(17) * i < a.bottom; i++) {
+            c.drawText(lines.get(i), a.left, hy + th.px(17) * i, hint);
         }
 
         // status

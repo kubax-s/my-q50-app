@@ -65,7 +65,7 @@ public final class Analytics {
 
         int asym = TyreMonitor.asymmetricTyre(s.tyres);
         alerts.set(AlertEngine.TYRE_ASYM, asym >= 0,
-                asym >= 0 ? t.alertTyreAsym(t.tyreShort[asym], Fmt.number(-TyreMonitor.deviation(s.tyres, asym), 2)) : null);
+                asym >= 0 ? t.alertTyreAsym(t.tyreShort[asym], Fmt.number(TyreMonitor.belowOthers(s.tyres, asym), 2)) : null);
 
         int leak = tyres.leakTyre;
         alerts.set(AlertEngine.TYRE_LEAK, leak >= 0,

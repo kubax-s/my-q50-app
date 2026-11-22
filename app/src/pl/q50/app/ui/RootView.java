@@ -127,7 +127,10 @@ public final class RootView extends View {
             }
             th.fill.setColor(sel ? Theme.PANEL_HI : Theme.BG);
             c.drawRoundRect(r, th.px(8), th.px(8), th.fill);
-            Paint p = th.bold(13, fg, Paint.Align.CENTER);
+            Paint p = th.bold(14, fg, Paint.Align.CENTER);
+            for (float size = 14; size > 10 && p.measureText(title) > r.width() - th.px(6); size -= 0.5f) {
+                p.setTextSize(th.px(size));
+            }
             c.drawText(Theme.fit(p, title, r.width() - th.px(4)), r.centerX(),
                     r.centerY() - (p.ascent() + p.descent()) / 2, p);
             if (sel) {

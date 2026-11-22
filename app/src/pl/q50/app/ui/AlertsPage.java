@@ -74,12 +74,20 @@ final class AlertsPage implements Page {
                 state = t.alertOff;
                 sc = Theme.OK;
             }
-            Paint sp = th.bold(13, sc, Paint.Align.RIGHT);
-            Paint np = th.text(14, enabled ? Theme.TEXT : Theme.DIM, Paint.Align.LEFT);
             float nameX = l + th.px(30);
-            float stateW = Math.min(sp.measureText(state), (r - nameX) * 0.55f);
-            c.drawText(Theme.fit(np, t.alertNames[i], r - nameX - stateW - th.px(20)), nameX, cy + th.px(5), np);
-            c.drawText(Theme.fit(sp, state, stateW + th.px(1)), r - th.px(10), cy + th.px(5), sp);
+            if (active && snoozed == 0) {
+                // two lines: name, then the live alert text
+                Paint np = th.bold(13, Theme.TEXT, Paint.Align.LEFT);
+                c.drawText(Theme.fit(np, t.alertNames[i], r - nameX - th.px(10)), nameX, cy - th.px(2), np);
+                Paint sp = th.text(12, sc, Paint.Align.LEFT);
+                c.drawText(Theme.fit(sp, state, r - nameX - th.px(10)), nameX, cy + th.px(12), sp);
+            } else {
+                Paint sp = th.bold(13, sc, Paint.Align.RIGHT);
+                Paint np = th.text(14, enabled ? Theme.TEXT : Theme.DIM, Paint.Align.LEFT);
+                float stateW = Math.min(sp.measureText(state), (r - nameX) * 0.4f);
+                c.drawText(Theme.fit(np, t.alertNames[i], r - nameX - stateW - th.px(20)), nameX, cy + th.px(5), np);
+                c.drawText(Theme.fit(sp, state, stateW + th.px(1)), r - th.px(10), cy + th.px(5), sp);
+            }
         }
         Paint hp = th.text(11, Theme.DIM, Paint.Align.LEFT);
         c.drawText(Theme.fit(hp, t.tapToSnooze, lw), l, a.bottom - th.px(5), hp);

@@ -75,6 +75,26 @@ public final class Theme {
         return str.substring(0, Math.max(0, n)) + "…";
     }
 
+    /** Greedy word wrap into lines no wider than maxWidth. */
+    public static java.util.List<String> wrap(Paint p, String str, float maxWidth) {
+        java.util.List<String> lines = new java.util.ArrayList<String>();
+        String[] words = str.split(" ");
+        StringBuilder line = new StringBuilder();
+        for (int i = 0; i < words.length; i++) {
+            String candidate = line.length() == 0 ? words[i] : line + " " + words[i];
+            if (line.length() > 0 && p.measureText(candidate) > maxWidth) {
+                lines.add(line.toString());
+                line.setLength(0);
+                line.append(words[i]);
+            } else {
+                line.setLength(0);
+                line.append(candidate);
+            }
+        }
+        if (line.length() > 0) lines.add(line.toString());
+        return lines;
+    }
+
     /** Button with a drawn triangle (the stock 2.3 font may lack arrow glyphs). */
     public void arrowButton(Canvas c, RectF r, boolean up, boolean enabled) {
         fill.setColor(enabled ? PANEL_HI : PANEL);

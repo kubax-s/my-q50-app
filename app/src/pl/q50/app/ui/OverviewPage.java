@@ -120,16 +120,21 @@ final class OverviewPage implements Page {
         c.drawText(Strings.get().tyres, l + th.px(10), t + th.px(22), th.text(14, Theme.DIM, Paint.Align.LEFT));
         c.drawText("bar", r - th.px(10), b - th.px(10), th.text(14, Theme.DIM, Paint.Align.RIGHT));
         float cx = (l + r) / 2;
-        float top = t + th.px(30);
-        float rowH = (b - th.px(26) - top) / 2;
+        float top = t + th.px(28);
+        float bottom = b - th.px(22);
+        float rowH = (bottom - top) / 2;
+        // value + label must fit in a row: value takes ~70 %, the label below it the rest
+        float vs = Math.min(size, rowH / th.s * 0.55f);
+        float ls = Math.max(9f, Math.min(12f, rowH / th.s * 0.22f));
         for (int i = 0; i < TYRES.length; i++) {
             Channel ch = hub.signal(TYRES[i]);
             float x = i % 2 == 0 ? (l + cx) / 2 : (cx + r) / 2;
-            float y = top + (i / 2) * rowH + rowH * 0.62f;
+            float rowTop = top + (i / 2) * rowH;
+            float baseline = rowTop + th.px(vs) * 0.95f;
             String val = ch == null || !ch.hasValue() ? "—" : Fmt.number(ch.value(), 2);
             boolean low = ch != null && ch.hasValue() && ch.value() < TyreMonitor.LOW_BAR;
-            c.drawText(val, x, y, th.bold(size, low ? Theme.HOT : Theme.TEXT, Paint.Align.CENTER));
-            c.drawText(Strings.get().tyreShort[i], x, y + th.px(16), th.text(11, Theme.DIM, Paint.Align.CENTER));
+            c.drawText(val, x, baseline, th.bold(vs, low ? Theme.HOT : Theme.TEXT, Paint.Align.CENTER));
+            c.drawText(Strings.get().tyreShort[i], x, baseline + th.px(ls) + th.px(3), th.text(ls, Theme.DIM, Paint.Align.CENTER));
         }
     }
 }

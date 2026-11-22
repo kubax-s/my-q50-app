@@ -305,8 +305,8 @@ public final class Strings {
         tripMaxCoolant = en ? "Max coolant" : "Maks. płyn";
         tripMaxOil = en ? "Max oil" : "Maks. olej";
         tripSpirited = en ? "Spirited driving" : "Dynamiczna jazda";
-        rpmBandsTitle = en ? "TIME IN RPM BANDS" : "CZAS W ZAKRESACH OBROTÓW";
-        gearsTitle = en ? "TIME IN GEARS" : "CZAS NA BIEGACH";
+        rpmBandsTitle = en ? "RPM BANDS %" : "OBROTY %";
+        gearsTitle = en ? "GEARS %" : "BIEGI %";
         resetTrip = en ? "RESET TRIP" : "RESET PRZEJAZDU";
 
         tilesTitle = en ? "SHOWN ON OVERVIEW" : "WIDOCZNE NA PRZEGLĄDZIE";

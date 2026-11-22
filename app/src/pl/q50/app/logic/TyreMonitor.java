@@ -68,6 +68,12 @@ public final class TyreMonitor {
         return idx;
     }
 
+    /** How much tyre i is below the mean of the other three (bar, positive = lower). */
+    public static float belowOthers(float[] t, int i) {
+        if (!allValid(t)) return Float.NaN;
+        return (t[0] + t[1] + t[2] + t[3] - t[i]) / 3f - t[i];
+    }
+
     /** Pressure of tyre i relative to the mean of all four (bar). */
     public static float deviation(float[] t, int i) {
         if (!allValid(t)) return Float.NaN;

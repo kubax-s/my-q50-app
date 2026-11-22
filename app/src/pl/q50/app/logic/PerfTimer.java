@@ -17,6 +17,11 @@ public final class PerfTimer {
     public static final double QUARTER_M = 402.336;
     private static final float STOP_KMH = 0.5f;
     private static final float DROP_ABORT_KMH = 4f;
+    /**
+     * Fastest believable change of the speed signal (km/h per second, ≈ 4 g). Anything faster is
+     * a data gap or glitch: running runs are dropped and nothing starts on that tick.
+     */
+    public static final float MAX_RATE_KMH_S = 150f;
 
     /** Run definitions: kind, from, to, timeout. */
     private static final int STANDING = 0;
@@ -99,6 +104,14 @@ public final class PerfTimer {
             return;
         }
         double dt = (t - prevT) / 1000.0;
+        if (dt > 0 && Math.abs(v - prevV) / dt > MAX_RATE_KMH_S) {
+            abortAll();
+            prevT = t;
+            prevV = v;
+            stopped = v < STOP_KMH;
+            lastStopT = t;
+            return;
+        }
         double segM = (prevV + v) / 2.0 / 3.6 * dt;
 
         // standing starts

@@ -63,6 +63,14 @@ bash scripts/build-apk.sh   # -> build/q50-monitor.apk + build/q50-monitor.epk
 
 The first build creates the signing key `signing/q50.keystore` (not in git). **Keep it** – without it an installed copy cannot be updated.
 
+### Desktop preview (no Android needed)
+
+```bash
+bash scripts/preview.sh     # -> build/preview/{pl,en}/N-tab.png + all.png
+```
+
+Runs a scripted drive (cold start, city, motorway, launch and braking, winding road, parking) through the real analytics and renders every tab with the **real drawing code**: the Android graphics calls go to `java.awt` via small stand-ins in [`tools/preview/shim`](tools/preview/shim). Fonts differ slightly from the head unit (DejaVu Sans vs. Droid Sans, which is narrower), so it is a close preview, not a pixel-exact one.
+
 GitHub Actions builds the `.epk` on every push (artifact *q50-monitor-N*). For CI builds to update an installed app, add these repository secrets:
 - `APK_KEYSTORE_B64` – output of `base64 -w0 signing/q50.keystore`
 - `APK_KEYSTORE_PASS` – keystore password (default `android`)
