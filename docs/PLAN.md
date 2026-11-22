@@ -1,6 +1,6 @@
 # Q50 App – analiza i plan pracy
 
-Aplikacja instalowana na **fabrycznym systemie InTouch** (App Garage, pakiet `.epk` z pendrive'a) w Infiniti Q50 (V37) z silnikiem **3.0t VR30DDTT**, wyświetlająca jak najwięcej danych o samochodzie – bez adaptera OBD i bez telefonu.
+Aplikacja instalowana na **fabrycznym systemie InTouch** (App Garage, pakiet `.epk` z pendrive'a) w Infiniti Q50 (V37) **MY2018** z silnikiem **3.0t VR30DDTT (305 KM, bez modyfikacji)**, wyświetlająca jak najwięcej danych o samochodzie – bez adaptera OBD i bez telefonu.
 
 ---
 
@@ -137,19 +137,19 @@ Zasady:
 
 ## 4. Plan pracy
 
-### Etap 0 – Weryfikacja auta (½ dnia, w samochodzie)
-- [ ] Sprawdzić, że w *APPS* jest **App Garage** i opcja *Install Apps via USB*.
-- [ ] Zainstalować znany pakiet (Twój `gtr.epk` albo appgarage-dash) – potwierdza, że Twoja wersja firmware akceptuje certyfikat OBU.
-- [ ] Zanotować wersję oprogramowania InTouch i rocznik auta.
+### Etap 0 – Weryfikacja auta ✅
+- [x] App Garage + *Install Apps via USB* dostępne (MY2018).
+- [x] Pakiet społeczności (`gtr.epk`) instaluje się i działa.
+- [ ] Zanotować wersję oprogramowania InTouch.
 
 ### Etap 1 – Toolchain + „Eksplorator sensorów” (≈1 tydz.)
-- [ ] Struktura repo: `app/` (Java), `tools/` (TS), `web/` (TS), `docs/`.
-- [ ] Skrypt budowania APK (aapt/javac/d8/zipalign/apksigner v1), weryfikacja `minSdk`, braku kodu natywnego, schematu podpisu.
-- [ ] `epk-tool` w TypeScript: `build` i `inspect`; test zgodności struktury z pakietami społeczności.
-- [ ] GitHub Actions: każdy push → artefakt `.apk` + `.epk` do pobrania na pendrive.
-- [ ] **Aplikacja „Eksplorator”:** lista wszystkich sensorów (typ, nazwa, vendor, cała tablica `values[]` na żywo, częstotliwość), zapis do CSV.
-- [ ] Test wydajności: Canvas (Java) vs WebView + TS – decyzja o technologii UI.
-- [ ] Sprawdzić, gdzie aplikacja może zapisywać pliki (pendrive? pamięć wewnętrzna?).
+- [x] Struktura repo: `app/` (Java), `tools/` (TS), `scripts/`, `docs/`.
+- [x] Skrypt budowania APK (aapt/javac/dx/zipalign/apksigner v1), weryfikacja `minSdk`, braku kodu natywnego, podpisu v1.
+- [x] `tools/epk.ts` (TypeScript): `build` i `inspect`, testy; `inspect` poprawnie czyta `gtr.epk`.
+- [x] GitHub Actions: każdy push → artefakt `.apk` + `.epk`.
+- [x] **Aplikacja v0.1 „Eksplorator”:** przegląd zmapowanych sygnałów, lista wszystkich sensorów z wykresem 20 s, zapis CSV z markerami.
+- [x] Decyzja: UI w Javie na Canvas (TS w narzędziach i przyszłej analizie logów).
+- [ ] **Pierwsza instalacja w aucie** i sprawdzenie, gdzie da się zapisywać pliki (pendrive? pamięć wewnętrzna?).
 
 ### Etap 2 – Mapowanie sygnałów (1–2 tyg., w aucie)
 - [ ] Przejazdy testowe z logowaniem; korelacja niezmapowanych sensorów z akcjami: tankowanie (poziom paliwa), skręt kierownicą, hamowanie, włączenie świateł, rozgrzewanie skrzyni.
@@ -190,9 +190,8 @@ Zasady:
 
 ---
 
-## 6. Otwarte pytania
+## 6. Ustalenia
 
-1. **Rocznik auta i wersja oprogramowania InTouch?** (App Garage musi być w menu APPS)
-2. **Czy `gtr.epk` instaluje się i działa w Twoim aucie?** Skąd pochodzi (to nie jest aplikacja z repozytoriów wyżej – ma ~2 MB)?
-3. **Język aplikacji w aucie:** Java (sprawdzona ścieżka, płynne zegary) czy próba z TypeScript w WebView (po teście wydajności)? Narzędzia i aplikacja do analizy logów i tak będą w TS.
-4. Czy silnik jest tuningowany (EcuTek)? To otwiera inne źródła danych o doładowaniu i spalaniu stukowym.
+- Auto: Q50 MY2018, VR30DDTT 305 KM, bez modyfikacji (brak EcuTek – doładowanie/AFR/knock tylko przez etap 5).
+- App Garage działa (zainstalowany `gtr.epk`).
+- Aplikacja w aucie: **Java**; TypeScript w narzędziach i aplikacji webowej.

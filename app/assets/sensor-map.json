@@ -1,0 +1,20 @@
+{
+  "_comment": "Android sensor type -> vehicle signal. Source: community findings on a VR30DDTT (bugjosh/appgarage-dash, oneezeeroo/Q50-Reverse-Engineering). 'verified' = confirmed on our own car. value = raw * scale + offset.",
+  "signals": [
+    { "type": 12, "key": "torque",      "label": "MOMENT",        "unit": "Nm",   "scale": 1,         "decimals": 0, "verified": false },
+    { "type": 13, "key": "rpm",         "label": "OBROTY",        "unit": "rpm",  "scale": 1,         "decimals": 0, "verified": false },
+    { "type": 14, "key": "coolant",     "label": "PŁYN",          "unit": "°C",   "scale": 1,         "decimals": 0, "verified": false, "cold": 60, "hot": 105 },
+    { "type": 15, "key": "oil_temp",    "label": "OLEJ",          "unit": "°C",   "scale": 1,         "decimals": 0, "verified": false, "cold": 60, "hot": 125 },
+    { "type": 16, "key": "oil_press",   "label": "CIŚN. OLEJU",   "unit": "bar",  "scale": 10,        "decimals": 1, "verified": false },
+    { "type": 17, "key": "speed",       "label": "PRĘDKOŚĆ",      "unit": "km/h", "scale": 1,         "decimals": 0, "verified": false },
+    { "type": 20, "key": "g_lat",       "label": "G BOK",         "unit": "g",    "scale": 1,         "decimals": 2, "verified": false },
+    { "type": 21, "key": "g_long",      "label": "G WZDŁ",        "unit": "g",    "scale": 1,         "decimals": 2, "verified": false },
+    { "type": 22, "key": "gear",        "label": "BIEG",          "unit": "",     "scale": 1,         "decimals": 0, "verified": false, "format": "gear" },
+    { "type": 23, "key": "throttle",    "label": "PRZEPUSTNICA",  "unit": "%",    "scale": 1,         "decimals": 0, "verified": false },
+    { "type": 32, "key": "power",       "label": "MOC",           "unit": "KM",   "scale": 1.42377e-4, "decimals": 0, "verified": false },
+    { "type": 36, "key": "tpms_fr",     "label": "OPONA PP",      "unit": "bar",  "scale": 0.0689476, "decimals": 2, "verified": false },
+    { "type": 37, "key": "tpms_fl",     "label": "OPONA LP",      "unit": "bar",  "scale": 0.0689476, "decimals": 2, "verified": false },
+    { "type": 38, "key": "tpms_rr",     "label": "OPONA PT",      "unit": "bar",  "scale": 0.0689476, "decimals": 2, "verified": false },
+    { "type": 39, "key": "tpms_rl",     "label": "OPONA LT",      "unit": "bar",  "scale": 0.0689476, "decimals": 2, "verified": false }
+  ]
+}

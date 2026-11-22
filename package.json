@@ -1,0 +1,17 @@
+{
+  "name": "q50-app",
+  "private": true,
+  "type": "module",
+  "description": "Infiniti Q50 InTouch (App Garage) app and tooling",
+  "engines": { "node": ">=22.18" },
+  "scripts": {
+    "epk": "node tools/epk.ts",
+    "test": "node --test \"tools/**/*.test.ts\"",
+    "typecheck": "tsc --noEmit",
+    "build:apk": "bash scripts/build-apk.sh"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  }
+}
