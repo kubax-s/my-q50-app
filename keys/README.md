@@ -1,7 +1,7 @@
 # keys/
 
-`obu_cert.pem` – **publiczny** certyfikat OBU z firmware InTouch (`CN=tt18002`, wystawca `IT5.YGOMI.COM CA`, RSA-1024, ważny do 2032-02-18).
+`obu_cert.pem` – the **public** OBU certificate from the InTouch firmware (`CN=tt18002`, issuer `IT5.YGOMI.COM CA`, RSA-1024, valid until 2032-02-18).
 
-Narzędzie `tools/epk.ts` szyfruje nim losowy klucz AES pakietu `.epk`; radio odszyfrowuje go swoim kluczem prywatnym zapisanym w firmware. Do budowania wystarcza część publiczna – **klucza prywatnego nie ma w tym repozytorium i nie jest potrzebny.**
+`tools/epk.ts` uses it to encrypt the random AES key of each `.epk` package; the head unit decrypts it with its private key stored in the firmware. Building needs only the public part – **the private key is not in this repository and is not needed.**
 
-Źródło: [bugjosh/appgarage-dash](https://github.com/bugjosh/appgarage-dash/tree/main/keys) (licencja MIT), zweryfikowany tam na Q60 Red Sport 2018. Działa na radiach z tą samą generacją firmware InTouch; inna wersja firmware może wymagać innego certyfikatu.
+Source: [bugjosh/appgarage-dash](https://github.com/bugjosh/appgarage-dash/tree/main/keys) (MIT license), verified there on a 2018 Q60 Red Sport. It works on head units with the same InTouch firmware generation; other firmware versions may need a different certificate.

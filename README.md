@@ -1,57 +1,59 @@
 # Q50 Monitor
 
-Aplikacja na fabryczny system **InTouch** w Infiniti Q50 (V37, MY2014–2019), instalowana przez **App Garage** z pendrive'a. Czyta dane z auta, które InTouch udostępnia aplikacjom jako sensory Androida – bez adaptera OBD i bez telefonu.
+An app for the factory **InTouch** head unit in the Infiniti Q50 (V37, MY2014–2019), installed through **App Garage** from a USB stick. It reads the vehicle data that InTouch exposes to apps as Android sensors – no OBD adapter, no phone.
 
-Plan i analiza: [`docs/PLAN.md`](docs/PLAN.md).
+Plan and analysis (Polish): [`docs/PLAN.md`](docs/PLAN.md).
 
-## Wersja 0.1 – Eksplorator sensorów
+## Version 0.1 – Sensor explorer
 
-| Zakładka | Co pokazuje |
+| Tab | What it shows |
 |---|---|
-| **PRZEGLĄD** | Obroty, prędkość, bieg, przepustnica, temp. płynu i oleju, ciśnienie oleju, moment, moc, przeciążenia, ciśnienie w 4 oponach, z wartościami max |
-| **SENSORY** | Wszystkie sensory radia: typ, nazwa, wartości `v0–v2`, częstotliwość, zakres min…max. Dotknięcie wiersza pokazuje wykres z ostatnich 20 s. Filtr: pojazd / zmienne / wszystkie |
-| **LOG** | Zapis CSV (10 wierszy/s, wszystkie sensory), przycisk MARKER, wybór miejsca zapisu (pamięć wewnętrzna / pendrive) |
+| **PRZEGLĄD** (overview) | RPM, speed, gear, throttle, coolant and oil temperature, oil pressure, torque, power, G-forces, pressure in all 4 tyres, with max values |
+| **SENSORY** (sensors) | Every sensor the head unit exposes: type, name, values `v0–v2`, update rate, observed min…max. Tapping a row shows a 20 s chart. Filter: vehicle / changing / all |
+| **LOG** | CSV logging (10 rows/s, all sensors), MARKER button, choice of storage (internal storage / USB stick) |
 
-Zmapowane sygnały (typ sensora → nazwa, skala) są w [`app/assets/sensor-map.json`](app/assets/sensor-map.json). Pochodzą z ustaleń społeczności na tym samym silniku (VR30DDTT) i **nie są jeszcze zweryfikowane na naszym aucie** – do tego służą Eksplorator i logi.
+The UI is in Polish.
 
-Bez sensorów pojazdu (np. w emulatorze) aplikacja przechodzi w tryb **DEMO** z wyraźnym oznaczeniem.
+Mapped signals (sensor type → name, scale) live in [`app/assets/sensor-map.json`](app/assets/sensor-map.json). They come from community findings on the same engine (VR30DDTT) and are **not yet verified on this car** – that is what the explorer and the logs are for.
 
-## Instalacja w aucie
+Without vehicle sensors (e.g. in an emulator) the app switches to a clearly labelled **DEMO** mode.
 
-1. Pendrive sformatowany jako **FAT32**, plik `q50-monitor.epk` w **katalogu głównym**.
-2. Silnik włączony, odczekać aż InTouch skończy „Loading all apps”.
-3. Dolny ekran: **APPS → App Garage → Install Apps via USB** → wybrać *Q50 Monitor* → **Install**.
-4. Nie wyjmować pendrive'a w trakcie instalacji.
+## Installing in the car
 
-Aktualizacja: nowszy `.epk` instaluje się na starszy tylko wtedy, gdy jest podpisany **tym samym kluczem**. Jeśli App Garage nie pokazuje nowej wersji – odinstalować starą i zainstalować ponownie.
+1. Format a USB stick as **FAT32** and put `q50-monitor.epk` in its **root** folder.
+2. With the engine running, wait until InTouch finishes "Loading all apps".
+3. Lower screen: **APPS → App Garage → Install Apps via USB** → select *Q50 Monitor* → **Install**.
+4. Do not remove the stick during installation.
 
-## Budowanie
+Updates: a newer `.epk` installs over an older one only if it is signed with **the same key**. If App Garage does not offer the new version, uninstall the old one and install again.
 
-Wymagania: JDK 17+, Node 22.18+, oraz `aapt`, `zipalign`, `apksigner`, `dx`/`d8`
+## Building
+
+Requirements: JDK 17+, Node 22.18+, and `aapt`, `zipalign`, `apksigner`, `dx`/`d8`
 (Ubuntu: `sudo apt-get install aapt zipalign apksigner dalvik-exchange`).
 
 ```bash
 npm ci
-npm test                    # testy narzędzia .epk
-bash scripts/test-java.sh   # testy logiki aplikacji (JVM)
+npm test                    # .epk tool tests
+bash scripts/test-java.sh   # app logic tests (plain JVM)
 bash scripts/build-apk.sh   # -> build/q50-monitor.apk + build/q50-monitor.epk
 ```
 
-Pierwsze budowanie tworzy klucz podpisu `signing/q50.keystore` (poza gitem). **Zachowaj go** – bez niego nie da się zaktualizować zainstalowanej aplikacji.
+The first build creates the signing key `signing/q50.keystore` (not in git). **Keep it** – without it an installed copy cannot be updated.
 
-GitHub Actions buduje `.epk` przy każdym pushu (artefakt *q50-monitor-N*). Aby buildy z CI aktualizowały zainstalowaną aplikację, dodaj sekrety repozytorium:
-- `APK_KEYSTORE_B64` – `base64 -w0 signing/q50.keystore`
-- `APK_KEYSTORE_PASS` – hasło keystore (domyślnie `android`)
+GitHub Actions builds the `.epk` on every push (artifact *q50-monitor-N*). For CI builds to update an installed app, add these repository secrets:
+- `APK_KEYSTORE_B64` – output of `base64 -w0 signing/q50.keystore`
+- `APK_KEYSTORE_PASS` – keystore password (default `android`)
 
-### Ograniczenia platformy
-- Android 2.3.7 (API 10), x86, Dalvik: Java 8 bez lambd i bez API spoza Androida 2.3, żadnych bibliotek ani kodu natywnego.
-- Podpis APK v1 (JAR).
-- `.epk` = APK zaszyfrowany AES-256-CBC, klucz zaszyfrowany publicznym certyfikatem OBU z firmware ([`keys/`](keys/README.md)). Narzędzie: `node tools/epk.ts build|inspect`.
+### Platform constraints
+- Android 2.3.7 (API 10), x86, Dalvik: Java 8 without lambdas and without APIs missing from Android 2.3; no libraries, no native code.
+- APK signature scheme v1 (JAR).
+- `.epk` = the APK encrypted with AES-256-CBC, with the AES key encrypted to the public OBU certificate from the firmware ([`keys/`](keys/README.md)). Tool: `node tools/epk.ts build|inspect`.
 
-## Podziękowania
+## Credits
 
-Format `.epk`, certyfikat OBU i mapa sensorów pochodzą z pracy społeczności:
+The `.epk` format, the OBU certificate and the sensor map come from community work:
 [bugjosh/appgarage-dash](https://github.com/bugjosh/appgarage-dash) (MIT),
 [oneezeeroo/Q50-Reverse-Engineering](https://github.com/oneezeeroo/Q50-Reverse-Engineering) (MIT).
 
-Projekt prywatny, niezwiązany z Infiniti/Nissan. Używaj tylko we własnym aucie; nie patrz na ekran zamiast na drogę.
+Personal project, not affiliated with Infiniti/Nissan. Use only in your own car, and keep your eyes on the road rather than the screen.
