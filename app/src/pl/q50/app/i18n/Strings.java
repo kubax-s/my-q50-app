@@ -74,7 +74,68 @@ public final class Strings {
     public final String cannotCreateDir;
     public final String writeError;
 
+    // new tabs
+    public final String tabHealth;
+    public final String tabPerformance;
+    public final String tabTrip;
+
+    // alerts
+    public final String[] alertNames; // same order as AlertEngine.IDS
+    public final String alertOk;
+
+    // health
+    public final String warmUpTitle;
+    public final String stateCold;
+    public final String stateWarming;
+    public final String stateWarm;
+    public final String coolantWarmAfter;
+    public final String oilWarmAfter;
+    public final String warmStart;
+    public final String turboTitle;
+    public final String turboCooling;
+    public final String turboOk;
+    public final String turboHint;
+    public final String oilPressTitle;
+    public final String normal;
+    public final String tyresTitle;
+    public final String noLeak;
+    public final String vsAverage;
+
+    // performance
+    public final String[] runNames; // same order as PerfTimer runs
+    public final String colLast;
+    public final String colBest;
+    public final String armed;
+    public final String notArmed;
+    public final String timing;
+    public final String resetRecords;
+    public final String dynoTitle;
+    public final String dynoEmpty;
+    public final String resetDyno;
+
+    // trip
+    public final String tripTime;
+    public final String tripDriving;
+    public final String tripIdle;
+    public final String tripDistance;
+    public final String tripAvgSpeed;
+    public final String tripMaxSpeed;
+    public final String tripMaxRpm;
+    public final String tripMaxPower;
+    public final String tripMaxTorque;
+    public final String tripMaxGLat;
+    public final String tripGLong;
+    public final String tripMaxCoolant;
+    public final String tripMaxOil;
+    public final String tripSpirited;
+    public final String rpmBandsTitle;
+    public final String gearsTitle;
+    public final String resetTrip;
+
     // settings
+    public final String tilesTitle;
+    public final String alertsTitle;
+    public final String alertSound;
     public final String language;
     public final String version;
     public final String dataSource;
@@ -114,10 +175,10 @@ public final class Strings {
         marker = "MARKER";
         logHints = en
                 ? new String[]{"Marker = a tag in the log (e.g. \"steering now\"),",
-                "also available under the REC dot on the tab bar.",
+                "or long-press anywhere on the screen.",
                 "Logging: 10 rows/s, all sensors, v0–v2."}
                 : new String[]{"Marker = znacznik w logu (np. „teraz skręcam”),",
-                "dostępny też pod kropką REC na pasku zakładek.",
+                "albo przytrzymaj palec na ekranie (dowolna zakładka).",
                 "Zapis: 10 wierszy/s, wszystkie sensory, v0–v2."};
         state = en ? "State" : "Stan";
         file = en ? "File" : "Plik";
@@ -140,6 +201,70 @@ public final class Strings {
         startLoggingFirst = en ? "Start logging first" : "Najpierw włącz zapis";
         cannotCreateDir = en ? "Cannot create folder " : "Nie można utworzyć katalogu ";
         writeError = en ? "Write error: " : "Błąd zapisu: ";
+
+        tabHealth = en ? "HEALTH" : "ZDROWIE";
+        tabPerformance = en ? "PERFORMANCE" : "OSIĄGI";
+        tabTrip = en ? "TRIP" : "PRZEJAZD";
+
+        alertNames = en
+                ? new String[]{"Coolant overheating", "Oil overheating", "Low oil pressure", "Oil pressure below normal",
+                "Cold oil under load", "Low tyre pressure", "One tyre lower", "Slow tyre leak", "Turbo cool-down"}
+                : new String[]{"Przegrzanie płynu", "Przegrzanie oleju", "Niskie ciśnienie oleju",
+                "Ciśnienie oleju poniżej normy", "Zimny olej pod obciążeniem", "Niskie ciśnienie w oponie",
+                "Jedna opona niższa", "Wolny wyciek z opony", "Schłodzenie turbin"};
+        alertOk = "OK";
+
+        warmUpTitle = en ? "WARM-UP" : "ROZGRZANIE";
+        stateCold = en ? "COLD – keep revs low" : "ZIMNY – bez wysokich obrotów";
+        stateWarming = en ? "WARMING UP" : "ROZGRZEWANIE";
+        stateWarm = en ? "WARM" : "ROZGRZANY";
+        coolantWarmAfter = en ? "Coolant 80 °C after" : "Płyn 80 °C po";
+        oilWarmAfter = en ? "Oil 80 °C after" : "Olej 80 °C po";
+        warmStart = en ? "Warm start – no warm-up timing" : "Start na ciepłym silniku – bez pomiaru";
+        turboTitle = "TURBO";
+        turboCooling = en ? "Idle to cool down" : "Schłodź na wolnych obrotach";
+        turboOk = en ? "Turbos cooled down" : "Turbiny schłodzone";
+        turboHint = en ? "After hard driving, idle before switching off" : "Po ostrej jeździe odczekaj przed zgaszeniem";
+        oilPressTitle = en ? "OIL PRESSURE" : "CIŚNIENIE OLEJU";
+        normal = en ? "normal" : "norma";
+        tyresTitle = en ? "TYRES" : "OPONY";
+        noLeak = en ? "No sign of a slow leak" : "Brak oznak wolnego wycieku";
+        vsAverage = en ? "vs. average of 4" : "względem średniej z 4";
+
+        runNames = en
+                ? new String[]{"0–100 km/h", "1/4 mile", "60–100 km/h", "80–120 km/h", "100–200 km/h", "100–0 km/h"}
+                : new String[]{"0–100 km/h", "1/4 mili", "60–100 km/h", "80–120 km/h", "100–200 km/h", "100–0 km/h"};
+        colLast = en ? "LAST" : "OSTATNI";
+        colBest = en ? "BEST" : "REKORD";
+        armed = en ? "Ready – launch!" : "Gotowy – ruszaj!";
+        notArmed = en ? "Stop the car to time a launch" : "Zatrzymaj auto, aby zmierzyć start";
+        timing = en ? "timing…" : "pomiar…";
+        resetRecords = en ? "RESET RECORDS" : "RESET REKORDÓW";
+        dynoTitle = en ? "DYNO (full throttle)" : "DYNO (pełny gaz)";
+        dynoEmpty = en ? "Floor it (≥ 90% throttle) to draw the curve" : "Gaz do dechy (≥ 90%) rysuje krzywą";
+        resetDyno = "RESET DYNO";
+
+        tripTime = en ? "Time" : "Czas";
+        tripDriving = en ? "Driving" : "Jazda";
+        tripIdle = en ? "Idling" : "Postój";
+        tripDistance = en ? "Distance" : "Dystans";
+        tripAvgSpeed = en ? "Avg. speed" : "Śr. prędkość";
+        tripMaxSpeed = en ? "Max speed" : "Maks. prędkość";
+        tripMaxRpm = en ? "Max RPM" : "Maks. obroty";
+        tripMaxPower = en ? "Max power" : "Maks. moc";
+        tripMaxTorque = en ? "Max torque" : "Maks. moment";
+        tripMaxGLat = en ? "Max lateral G" : "Maks. G bok";
+        tripGLong = en ? "Long. G + / −" : "G wzdł. + / −";
+        tripMaxCoolant = en ? "Max coolant" : "Maks. płyn";
+        tripMaxOil = en ? "Max oil" : "Maks. olej";
+        tripSpirited = en ? "Spirited driving" : "Dynamiczna jazda";
+        rpmBandsTitle = en ? "TIME IN RPM BANDS" : "CZAS W ZAKRESACH OBROTÓW";
+        gearsTitle = en ? "TIME IN GEARS" : "CZAS NA BIEGACH";
+        resetTrip = en ? "RESET TRIP" : "RESET PRZEJAZDU";
+
+        tilesTitle = en ? "SHOWN ON OVERVIEW" : "WIDOCZNE NA PRZEGLĄDZIE";
+        alertsTitle = en ? "ALERTS" : "ALERTY";
+        alertSound = en ? "Alert sound" : "Dźwięk alertów";
 
         language = en ? "LANGUAGE" : "JĘZYK";
         version = en ? "Version" : "Wersja";
@@ -166,6 +291,67 @@ public final class Strings {
 
     public String markerNo(int n) {
         return "Marker #" + n;
+    }
+
+    public String alertCoolantHot(String temp) {
+        return (en ? "Coolant " : "Płyn chłodzący ") + temp + " °C";
+    }
+
+    public String alertOilHot(String temp) {
+        return (en ? "Oil " : "Olej ") + temp + " °C";
+    }
+
+    public String alertOilPressLow(String bar) {
+        return (en ? "Low oil pressure: " : "Niskie ciśnienie oleju: ") + bar + " bar";
+    }
+
+    public String alertOilPressBaseline(String bar, String expected) {
+        return en ? "Oil pressure " + bar + " bar, normally " + expected + " bar"
+                : "Ciśnienie oleju " + bar + " bar, norma " + expected + " bar";
+    }
+
+    public String alertColdOil(String temp) {
+        return en ? "Cold oil (" + temp + " °C) – keep revs low" : "Zimny olej (" + temp + " °C) – bez wysokich obrotów";
+    }
+
+    public String alertTyreLow(String tyre, String bar) {
+        return (en ? "Low pressure: tyre " : "Niskie ciśnienie: opona ") + tyre + " " + bar + " bar";
+    }
+
+    public String alertTyreAsym(String tyre, String diff) {
+        return en ? "Tyre " + tyre + ": " + diff + " bar below the others"
+                : "Opona " + tyre + ": " + diff + " bar mniej niż pozostałe";
+    }
+
+    public String alertTyreLeak(String tyre, String drop, int days) {
+        return en ? "Possible slow leak: " + tyre + " −" + drop + " bar in " + days + (days == 1 ? " day" : " days")
+                : "Możliwy wolny wyciek: " + tyre + " −" + drop + " bar w " + days + " " + plural(days, "dzień", "dni", "dni");
+    }
+
+    public String alertTurbo(int seconds) {
+        return en ? "Turbo cool-down: idle for " + seconds + " s more"
+                : "Schłodzenie turbin: jeszcze " + seconds + " s na wolnych obrotach";
+    }
+
+    public String turboSeconds(int seconds) {
+        return en ? seconds + " s left" : "jeszcze " + seconds + " s";
+    }
+
+    public String oilLearning(int learned, int total) {
+        return en ? "Learning baseline: " + learned + "/" + total + " bands (warm oil)"
+                : "Nauka normy: " + learned + "/" + total + " zakresów (ciepły olej)";
+    }
+
+    public String tyreSessions(int n) {
+        return en ? "Session readings: " + n : "Pomiary z sesji: " + n;
+    }
+
+    public String newResult(String run, String result) {
+        return (en ? "New result: " : "Nowy wynik: ") + run + "  " + result;
+    }
+
+    public String recTab(String duration) {
+        return "REC " + duration;
     }
 
     /** Polish plural: 1 sensor, 2–4 sensory (except 12–14), otherwise sensorów. */

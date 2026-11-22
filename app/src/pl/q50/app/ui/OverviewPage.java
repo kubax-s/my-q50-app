@@ -9,21 +9,25 @@ import pl.q50.app.data.DataHub;
 import pl.q50.app.data.Fmt;
 import pl.q50.app.data.SignalDef;
 import pl.q50.app.i18n.Strings;
+import pl.q50.app.logic.Settings;
+import pl.q50.app.logic.TyreMonitor;
 
-/** Big-number overview of the mapped signals: 4 × 3 tiles, the last one shows all four tyres. */
+/**
+ * Big-number overview of the mapped signals. Tiles can be hidden in the settings; the grid
+ * re-flows so the remaining tiles get bigger.
+ */
 final class OverviewPage implements Page {
-    private static final String[] TILES = {
-            "rpm", "speed", "gear", "throttle",
-            "coolant", "oil_temp", "oil_press", "torque",
-            "power", "g_lat", "g_long", null, // null = tyre tile
-    };
+    private static final String TYRE_TILE = "tyres";
     /** Same order as Strings.tyreShort: FL, FR, RL, RR. */
     private static final String[] TYRES = {"tpms_fl", "tpms_fr", "tpms_rl", "tpms_rr"};
 
     private final DataHub hub;
+    private final Settings settings;
+    private final String[] visible = new String[Settings.TILES.length];
 
-    OverviewPage(DataHub hub) {
+    OverviewPage(DataHub hub, Settings settings) {
         this.hub = hub;
+        this.settings = settings;
     }
 
     public String title() {
@@ -48,29 +52,47 @@ final class OverviewPage implements Page {
             c.drawText(Strings.get().noVehicleSensors, a.centerX(), top + th.px(20), th.bold(15, Theme.HOT, Paint.Align.CENTER));
             top += th.px(34);
         }
+        int n = 0;
+        for (int i = 0; i < Settings.TILES.length; i++) {
+            if (settings.isTileVisible(Settings.TILES[i])) visible[n++] = Settings.TILES[i];
+        }
+        if (n == 0) {
+            return;
+        }
+        int cols = columns(n);
+        int rows = (n + cols - 1) / cols;
         float gap = th.px(8);
-        int cols = 4;
-        int rows = 3;
         float w = (a.width() - gap * (cols - 1)) / cols;
         float h = (a.bottom - top - gap * (rows - 1)) / rows;
-        for (int i = 0; i < TILES.length; i++) {
+        float valueSize = Math.max(30f, Math.min(96f, Math.min(h / th.s * 0.42f, w / th.s * 0.3f)));
+        for (int i = 0; i < n; i++) {
             float l = a.left + (i % cols) * (w + gap);
             float t = top + (i / cols) * (h + gap);
-            if (TILES[i] == null) {
-                drawTyres(c, th, l, t, l + w, t + h);
+            if (TYRE_TILE.equals(visible[i])) {
+                drawTyres(c, th, l, t, l + w, t + h, valueSize * 0.55f);
             } else {
-                drawTile(c, th, hub.signal(TILES[i]), TILES[i], l, t, l + w, t + h);
+                drawTile(c, th, hub.signal(visible[i]), visible[i], l, t, l + w, t + h, valueSize);
             }
         }
     }
 
-    private void drawTile(Canvas c, Theme th, Channel ch, String key, float l, float t, float r, float b) {
+    /** Grid width for n tiles on a wide screen. */
+    static int columns(int n) {
+        if (n <= 3) return n;
+        if (n == 4) return 2;
+        if (n <= 6) return 3;
+        if (n <= 8) return 4;
+        if (n == 9) return 3;
+        return 4;
+    }
+
+    private void drawTile(Canvas c, Theme th, Channel ch, String key, float l, float t, float r, float b, float size) {
         th.panel(c, l, t, r, b, Theme.PANEL);
         SignalDef d = ch == null ? null : ch.def;
         String label = d == null ? key.toUpperCase() : d.label();
         c.drawText(label, l + th.px(10), t + th.px(22), th.text(14, Theme.DIM, Paint.Align.LEFT));
         if (ch == null || !ch.hasValue()) {
-            c.drawText("—", (l + r) / 2, (t + b) / 2 + th.px(16), th.bold(44, Theme.LINE, Paint.Align.CENTER));
+            c.drawText("—", (l + r) / 2, (t + b) / 2 + th.px(size * 0.35f), th.bold(size, Theme.LINE, Paint.Align.CENTER));
             c.drawText(ch == null ? Strings.get().noSensor : Strings.get().noData, (l + r) / 2, b - th.px(10),
                     th.text(12, Theme.DIM, Paint.Align.CENTER));
             return;
@@ -82,7 +104,7 @@ final class OverviewPage implements Page {
         } else if (!Float.isNaN(d.cold) && v < d.cold) {
             color = Theme.COLD;
         }
-        c.drawText(ch.formatted(), (l + r) / 2, (t + b) / 2 + th.px(18), th.bold(48, color, Paint.Align.CENTER));
+        c.drawText(ch.formatted(), (l + r) / 2, (t + b) / 2 + th.px(size * 0.37f), th.bold(size, color, Paint.Align.CENTER));
         c.drawText(d.unit(), r - th.px(10), b - th.px(10), th.text(14, Theme.DIM, Paint.Align.RIGHT));
         if (!"gear".equals(d.format)) {
             String range = "max " + d.formatRaw(ch.max);
@@ -93,7 +115,7 @@ final class OverviewPage implements Page {
         }
     }
 
-    private void drawTyres(Canvas c, Theme th, float l, float t, float r, float b) {
+    private void drawTyres(Canvas c, Theme th, float l, float t, float r, float b, float size) {
         th.panel(c, l, t, r, b, Theme.PANEL);
         c.drawText(Strings.get().tyres, l + th.px(10), t + th.px(22), th.text(14, Theme.DIM, Paint.Align.LEFT));
         c.drawText("bar", r - th.px(10), b - th.px(10), th.text(14, Theme.DIM, Paint.Align.RIGHT));
@@ -105,7 +127,8 @@ final class OverviewPage implements Page {
             float x = i % 2 == 0 ? (l + cx) / 2 : (cx + r) / 2;
             float y = top + (i / 2) * rowH + rowH * 0.62f;
             String val = ch == null || !ch.hasValue() ? "—" : Fmt.number(ch.value(), 2);
-            c.drawText(val, x, y, th.bold(26, Theme.TEXT, Paint.Align.CENTER));
+            boolean low = ch != null && ch.hasValue() && ch.value() < TyreMonitor.LOW_BAR;
+            c.drawText(val, x, y, th.bold(size, low ? Theme.HOT : Theme.TEXT, Paint.Align.CENTER));
             c.drawText(Strings.get().tyreShort[i], x, y + th.px(16), th.text(11, Theme.DIM, Paint.Align.CENTER));
         }
     }

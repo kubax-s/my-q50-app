@@ -4,14 +4,34 @@ An app for the factory **InTouch** head unit in the Infiniti Q50 (V37, MY2014–
 
 Plan and analysis: [`docs/PLAN.md`](docs/PLAN.md).
 
-## Version 0.2 – Sensor explorer
+## Version 0.3
 
 | Tab | What it shows |
 |---|---|
-| **PRZEGLĄD** (overview) | RPM, speed, gear, throttle, coolant and oil temperature, oil pressure, torque, power, G-forces, pressure in all 4 tyres, with max values |
-| **SENSORY** (sensors) | Every sensor the head unit exposes: type, name, values `v0–v2`, update rate, observed min…max. Tapping a row shows a 20 s chart. Filter: vehicle / changing / all |
-| **LOG** | CSV logging (10 rows/s, all sensors), MARKER button, choice of storage (internal storage / USB stick) |
-| **USTAWIENIA** (settings) | UI language (Polish / English), app version, data source |
+| **PRZEGLĄD** (overview) | Big tiles: RPM, speed, gear, throttle, coolant and oil temperature, oil pressure, torque, power, G-forces, all 4 tyres, with max values. Tiles can be hidden in settings; the grid re-flows |
+| **ZDROWIE** (health) | Warm-up state and warm-up times, turbo cool-down timer, oil pressure vs. a baseline learned per 500 rpm, tyre pressures vs. the average and slow-leak check |
+| **OSIĄGI** (performance) | Automatic 0–100, 1/4 mile (+ trap speed), 60–100, 80–120, 100–200 km/h and 100–0 braking distance, with last and best results; "dyno" power/torque curve from full-throttle pulls |
+| **PRZEJAZD** (trip) | Time, driving/idle time, distance, average and max speed, max RPM/power/torque/G/temperatures, share of spirited driving, time in RPM bands and in each gear |
+| **SENSORY** (sensors) | Every sensor the head unit exposes: type, name, values `v0–v2`, update rate, observed min…max. Tapping a row shows a 20 s chart |
+| **LOG** | CSV logging (10 rows/s, all sensors), markers (button or long-press anywhere), choice of storage |
+| **USTAWIENIA** (settings) | Language (Polish / English), which overview tiles are shown, which alerts are enabled, alert sound |
+
+### Alerts
+Shown as a banner at the bottom of every tab; tapping it snoozes that alert for 5 minutes. Each one can be switched off in settings.
+
+| Alert | Condition |
+|---|---|
+| Coolant overheating | ≥ 105 °C for 2 s |
+| Oil overheating | ≥ 125 °C for 2 s |
+| Low oil pressure | < 0.5 bar with the engine running |
+| Oil pressure below normal | < 70 % of the learned value for this RPM (warm oil) |
+| Cold oil under load | oil < 60 °C and > 4000 rpm or > 80 % throttle |
+| Low tyre pressure | any tyre < 2.0 bar |
+| One tyre lower | a tyre > 0.25 bar below the other three |
+| Slow tyre leak | a tyre lost > 0.15 bar more than the others over 2–14 days (session-start readings) |
+| Turbo cool-down | parked after hard driving – shows the remaining idle time |
+
+Thresholds are deliberately simple and live in [`app/src/pl/q50/app/logic/`](app/src/pl/q50/app/logic); they will be tuned once the signal scales are confirmed on the car. Records, the oil pressure baseline and tyre history are stored on the head unit.
 
 The UI is in Polish by default and can be switched to English in the settings tab (the choice is remembered). All texts live in [`Strings.java`](app/src/pl/q50/app/i18n/Strings.java); signal names come from `label`/`label_en` in the sensor map.
 
@@ -36,7 +56,7 @@ Requirements: JDK 17+, Node 22.18+, and `aapt`, `zipalign`, `apksigner`, `dx`/`d
 ```bash
 npm ci
 npm test                    # .epk tool tests
-bash scripts/test-java.sh   # app logic tests (plain JVM)
+bash scripts/test-java.sh   # formatting, i18n and logic tests (plain JVM)
 bash scripts/build-apk.sh   # -> build/q50-monitor.apk + build/q50-monitor.epk
 ```
 

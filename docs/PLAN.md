@@ -156,15 +156,17 @@ Principles:
 - [ ] Confirm scales (compare with the gauges and the trip computer).
 - [ ] Output: `docs/sensor-map.md` + the map config file.
 
-### Stage 3 – Dashboard MVP (1–2 weeks)
-- [ ] Pages: **Engine** (RPM, power, torque, oil temperature/pressure, coolant), **Chassis** (tyres, G-meter, gear), **Trip**.
-- [ ] Metric units by default, night theme, large fonts, one-tap operation.
+### Stage 3 – Dashboard MVP ✅ (v0.3, not yet tested in the car)
+- [x] Overview with configurable tiles, **Health**, **Performance** and **Trip** pages.
+- [x] Metric units, dark theme, large fonts, one-tap operation; Polish/English UI.
 
-### Stage 4 – Health, alerts, performance, logs (2 weeks)
-- [ ] Alerts with thresholds and hysteresis.
-- [ ] Oil pressure baseline, warm-up, turbo cool-down.
-- [ ] 0–100 etc. timing, records, "dyno" from the torque/power sensors.
-- [ ] Per-trip CSV logger.
+### Stage 4 – Health, alerts, performance, logs (v0.3, not yet tested in the car)
+- [x] Alerts with on/off delays, hysteresis, snooze, per-alert enable switch, optional sound.
+- [x] Oil pressure baseline per 500 rpm, warm-up times, turbo cool-down estimate, tyre asymmetry and slow-leak check.
+- [x] 0–100, 1/4 mile, 60–100, 80–120, 100–200, 100–0 timing with records; "dyno" from the torque/power sensors.
+- [x] Trip computer (distance, times, maxima, RPM bands, gears).
+- [ ] Tune thresholds once the signal scales are confirmed on the car.
+- [ ] Per-trip CSV logs (automatic start/stop).
 
 ### Stage 5 – Data beyond the head unit's CAN (research, optional)
 - [ ] Investigate whether boost can be derived from the sensors (like "AUTO FIND" in Red Sport).

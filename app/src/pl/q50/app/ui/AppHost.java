@@ -22,4 +22,10 @@ public interface AppHost {
 
     /** Number of real vehicle sensors found. */
     int vehicleSensorCount();
+
+    /** Settings were changed by the user: persist them. */
+    void settingsChanged();
+
+    /** Records/baselines were changed (e.g. reset): persist them. */
+    void analyticsChanged();
 }
