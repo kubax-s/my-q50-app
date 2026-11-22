@@ -2,6 +2,8 @@ package pl.q50.app;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.hardware.SensorManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -13,6 +15,8 @@ import pl.q50.app.data.DemoSource;
 import pl.q50.app.data.SensorMap;
 import pl.q50.app.data.Storage;
 import pl.q50.app.data.VehicleSensorSource;
+import pl.q50.app.i18n.Strings;
+import pl.q50.app.ui.AppHost;
 import pl.q50.app.ui.RootView;
 
 /**
@@ -49,6 +53,7 @@ public final class MainActivity extends Activity {
     protected void onCreate(Bundle state) {
         super.onCreate(state);
         prefs = getSharedPreferences(PREFS, MODE_PRIVATE);
+        Strings.setLanguage(prefs.getString("lang", Strings.PL));
         hub = new DataHub(SensorMap.load(getAssets()));
         vehicle = new VehicleSensorSource((SensorManager) getSystemService(SENSOR_SERVICE), hub);
         demo = new DemoSource(hub);
@@ -106,24 +111,24 @@ public final class MainActivity extends Activity {
         handler.removeCallbacks(tick);
     }
 
-    private final class Host implements pl.q50.app.ui.LogPageHost {
+    private final class Host implements AppHost {
         public void toggleLogging(Storage.Option target) {
             if (logger.isActive()) {
                 logger.stop();
-                root.message("Zapisano " + logger.rows() + " wierszy");
+                root.message(Strings.get().savedRows(logger.rows()));
                 return;
             }
             String err = logger.start(target.logDir(), hub.channels());
-            root.message(err != null ? err : "Zapis do " + logger.file().getName());
+            root.message(err != null ? err : Strings.get().loggingTo(logger.file().getName()));
         }
 
         public void marker() {
             if (!logger.isActive()) {
-                root.message("Najpierw włącz zapis");
+                root.message(Strings.get().startLoggingFirst);
                 return;
             }
             logger.marker();
-            root.message("Marker #" + logger.markers());
+            root.message(Strings.get().markerNo(logger.markers()));
         }
 
         public void message(String text) {
@@ -136,6 +141,25 @@ public final class MainActivity extends Activity {
 
         public void saveStoragePath(String path) {
             prefs.edit().putString("storage", path).commit();
+        }
+
+        public void setLanguage(String code) {
+            Strings.setLanguage(code);
+            prefs.edit().putString("lang", Strings.get().code).commit();
+            root.invalidate();
+        }
+
+        public String versionText() {
+            try {
+                PackageInfo info = getPackageManager().getPackageInfo(getPackageName(), 0);
+                return info.versionName + " (" + info.versionCode + ")";
+            } catch (PackageManager.NameNotFoundException e) {
+                return "?";
+            }
+        }
+
+        public int vehicleSensorCount() {
+            return hub.vehicleCount();
         }
     }
 }

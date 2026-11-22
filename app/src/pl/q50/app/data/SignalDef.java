@@ -1,11 +1,15 @@
 package pl.q50.app.data;
 
+import pl.q50.app.i18n.Strings;
+
 /** How to turn one raw sensor value into a labelled, scaled vehicle signal. */
 public final class SignalDef {
     public final int type;
     public final String key;
-    public final String label;
-    public final String unit;
+    public final String labelPl;
+    public final String labelEn;
+    public final String unitPl;
+    public final String unitEn;
     public final float scale;
     public final float offset;
     public final int decimals;
@@ -17,12 +21,14 @@ public final class SignalDef {
     /** Value above which the signal is shown as "hot" (NaN = no threshold). */
     public final float hot;
 
-    public SignalDef(int type, String key, String label, String unit, float scale, float offset,
-                     int decimals, boolean verified, String format, float cold, float hot) {
+    public SignalDef(int type, String key, String labelPl, String labelEn, String unitPl, String unitEn,
+                     float scale, float offset, int decimals, boolean verified, String format, float cold, float hot) {
         this.type = type;
         this.key = key;
-        this.label = label;
-        this.unit = unit;
+        this.labelPl = labelPl;
+        this.labelEn = labelEn;
+        this.unitPl = unitPl;
+        this.unitEn = unitEn;
         this.scale = scale;
         this.offset = offset;
         this.decimals = decimals;
@@ -30,6 +36,14 @@ public final class SignalDef {
         this.format = format;
         this.cold = cold;
         this.hot = hot;
+    }
+
+    public String label() {
+        return Strings.get().en ? labelEn : labelPl;
+    }
+
+    public String unit() {
+        return Strings.get().en ? unitEn : unitPl;
     }
 
     public float convert(float raw) {

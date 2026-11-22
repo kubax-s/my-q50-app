@@ -11,6 +11,7 @@ import android.view.View;
 import pl.q50.app.data.CsvLogger;
 import pl.q50.app.data.DataHub;
 import pl.q50.app.data.Fmt;
+import pl.q50.app.i18n.Strings;
 
 /** The whole UI in one view: tab bar, current page, REC indicator, message line. */
 public final class RootView extends View {
@@ -31,11 +32,11 @@ public final class RootView extends View {
     private float downX;
     private float downY;
 
-    public RootView(Context ctx, DataHub hub, CsvLogger logger, LogPageHost host) {
+    public RootView(Context ctx, DataHub hub, CsvLogger logger, AppHost host) {
         super(ctx);
         this.logger = logger;
         logPage = new LogPage(hub, logger, host);
-        pages = new Page[]{new OverviewPage(hub), new SensorsPage(hub), logPage};
+        pages = new Page[]{new OverviewPage(hub), new SensorsPage(hub), logPage, new SettingsPage(hub, host)};
         tabRects = new RectF[pages.length];
         for (int i = 0; i < pages.length; i++) {
             tabRects[i] = new RectF();
@@ -67,21 +68,21 @@ public final class RootView extends View {
         c.drawColor(Theme.BG);
 
         // tab bar
-        float tabW = th.px(170);
+        float tabW = th.px(140);
         float tabBottom = th.px(TAB_H);
         for (int i = 0; i < pages.length; i++) {
             RectF r = tabRects[i];
             r.set(th.px(MARGIN) + i * (tabW + th.px(6)), th.px(6), th.px(MARGIN) + i * (tabW + th.px(6)) + tabW,
                     tabBottom - th.px(6));
             boolean sel = i == current;
-            th.button(c, r, pages[i].title(), sel ? Theme.PANEL_HI : Theme.BG, sel ? Theme.ACCENT : Theme.DIM, 17);
+            th.button(c, r, pages[i].title(), sel ? Theme.PANEL_HI : Theme.BG, sel ? Theme.ACCENT : Theme.DIM, 16);
             if (sel) {
                 th.fill.setColor(Theme.ACCENT);
                 c.drawRect(r.left + th.px(12), r.bottom - th.px(3), r.right - th.px(12), r.bottom, th.fill);
             }
         }
         if (logger.isActive()) {
-            recRect.set(getWidth() - th.px(MARGIN + 200), th.px(6), getWidth() - th.px(MARGIN), tabBottom - th.px(6));
+            recRect.set(getWidth() - th.px(MARGIN + 180), th.px(6), getWidth() - th.px(MARGIN), tabBottom - th.px(6));
             th.panel(c, recRect.left, recRect.top, recRect.right, recRect.bottom, Theme.PANEL_HI);
             boolean blink = (now / 500) % 2 == 0;
             th.fill.setColor(blink ? Theme.HOT : 0xFF802020);
@@ -139,7 +140,7 @@ public final class RootView extends View {
         }
         if (recRect.contains(x, y)) {
             logger.marker();
-            message("Marker #" + logger.markers());
+            message(Strings.get().markerNo(logger.markers()));
             return;
         }
         if (pages[current].onTap(x, y)) {

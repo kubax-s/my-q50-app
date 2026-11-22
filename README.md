@@ -4,15 +4,16 @@ An app for the factory **InTouch** head unit in the Infiniti Q50 (V37, MY2014–
 
 Plan and analysis: [`docs/PLAN.md`](docs/PLAN.md).
 
-## Version 0.1 – Sensor explorer
+## Version 0.2 – Sensor explorer
 
 | Tab | What it shows |
 |---|---|
 | **PRZEGLĄD** (overview) | RPM, speed, gear, throttle, coolant and oil temperature, oil pressure, torque, power, G-forces, pressure in all 4 tyres, with max values |
 | **SENSORY** (sensors) | Every sensor the head unit exposes: type, name, values `v0–v2`, update rate, observed min…max. Tapping a row shows a 20 s chart. Filter: vehicle / changing / all |
 | **LOG** | CSV logging (10 rows/s, all sensors), MARKER button, choice of storage (internal storage / USB stick) |
+| **USTAWIENIA** (settings) | UI language (Polish / English), app version, data source |
 
-The UI is in Polish.
+The UI is in Polish by default and can be switched to English in the settings tab (the choice is remembered). All texts live in [`Strings.java`](app/src/pl/q50/app/i18n/Strings.java); signal names come from `label`/`label_en` in the sensor map.
 
 Mapped signals (sensor type → name, scale) live in [`app/assets/sensor-map.json`](app/assets/sensor-map.json). They come from community findings on the same engine (VR30DDTT) and are **not yet verified on this car** – that is what the explorer and the logs are for.
 

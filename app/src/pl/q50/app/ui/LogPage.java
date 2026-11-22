@@ -11,12 +11,13 @@ import pl.q50.app.data.CsvLogger;
 import pl.q50.app.data.DataHub;
 import pl.q50.app.data.Fmt;
 import pl.q50.app.data.Storage;
+import pl.q50.app.i18n.Strings;
 
 /** Start/stop CSV logging, markers, and choice of where the files go. */
 final class LogPage implements Page {
     private final DataHub hub;
     private final CsvLogger logger;
-    private final LogPageHost host;
+    private final AppHost host;
     private List<Storage.Option> options = new ArrayList<Storage.Option>();
     private int chosen = -1;
 
@@ -25,14 +26,14 @@ final class LogPage implements Page {
     private final RectF rescanBtn = new RectF();
     private final List<RectF> optionRects = new ArrayList<RectF>();
 
-    LogPage(DataHub hub, CsvLogger logger, LogPageHost host) {
+    LogPage(DataHub hub, CsvLogger logger, AppHost host) {
         this.hub = hub;
         this.logger = logger;
         this.host = host;
     }
 
     public String title() {
-        return "LOG";
+        return Strings.get().tabLog;
     }
 
     public void onShow() {
@@ -62,18 +63,19 @@ final class LogPage implements Page {
     }
 
     public void draw(Canvas c, RectF a, Theme th, long now) {
+        Strings t = Strings.get();
         boolean on = logger.isActive();
         float colW = th.px(300);
         startBtn.set(a.left, a.top, a.left + colW, a.top + th.px(110));
         markerBtn.set(a.left, startBtn.bottom + th.px(10), a.left + colW, startBtn.bottom + th.px(120));
-        th.button(c, startBtn, on ? "STOP" : "START LOG", on ? Theme.HOT : Theme.OK, Theme.BG, 30);
-        th.button(c, markerBtn, "MARKER" + (on ? "  #" + (logger.markers() + 1) : ""),
+        th.button(c, startBtn, on ? t.stop : t.start, on ? Theme.HOT : Theme.OK, Theme.BG, 30);
+        th.button(c, markerBtn, t.marker + (on ? "  #" + (logger.markers() + 1) : ""),
                 on ? Theme.ACCENT : Theme.PANEL, on ? Theme.BG : Theme.DIM, 26);
         Paint hint = th.text(13, Theme.DIM, Paint.Align.LEFT);
         float hy = markerBtn.bottom + th.px(24);
-        c.drawText("Marker = znacznik w logu (np. „teraz skręcam”),", a.left, hy, hint);
-        c.drawText("dostępny też pod kropką REC na pasku zakładek.", a.left, hy + th.px(18), hint);
-        c.drawText("Zapis: 10 wierszy/s, wszystkie sensory, v0–v2.", a.left, hy + th.px(36), hint);
+        for (int i = 0; i < t.logHints.length; i++) {
+            c.drawText(t.logHints[i], a.left, hy + th.px(18) * i, hint);
+        }
 
         // status
         float x = a.left + colW + th.px(24);
@@ -83,12 +85,12 @@ final class LogPage implements Page {
         float vx = x + th.px(110);
         float maxW = a.right - vx;
         String[][] status = {
-                {"Stan", on ? "zapis trwa" : "zatrzymany"},
-                {"Plik", logger.file() == null ? "—" : logger.file().getName()},
-                {"Rozmiar", logger.file() == null ? "—" : Fmt.bytes(logger.file().length())},
-                {"Czas", Fmt.duration(logger.elapsedMs())},
-                {"Wiersze", Integer.toString(logger.rows())},
-                {"Sensory", Integer.toString(on ? logger.columnCount() : hub.channels().size())},
+                {t.state, on ? t.recording : t.stopped},
+                {t.file, logger.file() == null ? "—" : logger.file().getName()},
+                {t.size, logger.file() == null ? "—" : Fmt.bytes(logger.file().length())},
+                {t.time, Fmt.duration(logger.elapsedMs())},
+                {t.rows, Integer.toString(logger.rows())},
+                {t.sensors, Integer.toString(on ? logger.columnCount() : hub.channels().size())},
         };
         for (int i = 0; i < status.length; i++) {
             c.drawText(status[i][0], x, y, k);
@@ -98,14 +100,14 @@ final class LogPage implements Page {
         }
         if (logger.error() != null) {
             Paint e = th.bold(14, Theme.HOT, Paint.Align.LEFT);
-            c.drawText(Theme.fit(e, "Błąd: " + logger.error(), a.right - x), x, y, e);
+            c.drawText(Theme.fit(e, t.errorPrefix + logger.error(), a.right - x), x, y, e);
         }
 
         // storage options
         float st = a.top + th.px(180);
-        c.drawText("MIEJSCE ZAPISU", x, st, th.bold(14, Theme.DIM, Paint.Align.LEFT));
+        c.drawText(t.storageTitle, x, st, th.bold(14, Theme.DIM, Paint.Align.LEFT));
         rescanBtn.set(a.right - th.px(140), st - th.px(24), a.right, st + th.px(8));
-        th.button(c, rescanBtn, "SKANUJ", Theme.PANEL_HI, Theme.TEXT, 14);
+        th.button(c, rescanBtn, t.rescan, Theme.PANEL_HI, Theme.TEXT, 14);
         float oy = st + th.px(16);
         float rowH = th.px(34);
         optionRects.clear();
@@ -120,12 +122,12 @@ final class LogPage implements Page {
             Paint p = th.text(15, o.writable ? Theme.TEXT : Theme.DIM, Paint.Align.LEFT);
             c.drawText(Theme.fit(p, o.logDir().getAbsolutePath(), r.width() - th.px(110)), r.left + th.px(10),
                     r.centerY() + th.px(5), p);
-            c.drawText(o.writable ? "zapis OK" : "tylko odczyt", r.right - th.px(10), r.centerY() + th.px(5),
+            c.drawText(o.writable ? t.writable : t.readOnly, r.right - th.px(10), r.centerY() + th.px(5),
                     th.text(13, o.writable ? Theme.OK : Theme.DIM, Paint.Align.RIGHT));
             oy += rowH;
         }
         if (options.isEmpty()) {
-            c.drawText("Brak miejsc do zapisu – włóż pendrive i naciśnij SKANUJ", x, oy + th.px(20),
+            c.drawText(t.noStorage, x, oy + th.px(20),
                     th.text(14, Theme.HOT, Paint.Align.LEFT));
         }
     }
@@ -134,7 +136,7 @@ final class LogPage implements Page {
         if (startBtn.contains(x, y)) {
             Storage.Option t = target();
             if (!logger.isActive() && (t == null || !t.writable)) {
-                host.message("Wybierz miejsce zapisu z oznaczeniem „zapis OK”");
+                host.message(Strings.get().chooseWritable);
             } else {
                 host.toggleLogging(t);
             }
@@ -146,7 +148,7 @@ final class LogPage implements Page {
         }
         if (rescanBtn.contains(x, y)) {
             if (logger.isActive()) {
-                host.message("Zatrzymaj zapis przed zmianą miejsca");
+                host.message(Strings.get().stopBeforeChange);
             } else {
                 rescan();
             }
@@ -155,9 +157,9 @@ final class LogPage implements Page {
         for (int i = 0; i < optionRects.size(); i++) {
             if (optionRects.get(i).contains(x, y)) {
                 if (logger.isActive()) {
-                    host.message("Zatrzymaj zapis przed zmianą miejsca");
+                    host.message(Strings.get().stopBeforeChange);
                 } else if (!options.get(i).writable) {
-                    host.message("Tu nie da się zapisać");
+                    host.message(Strings.get().cannotWriteHere);
                 } else {
                     chosen = i;
                     host.saveStoragePath(options.get(i).root.getAbsolutePath());

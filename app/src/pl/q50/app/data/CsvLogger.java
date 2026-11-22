@@ -16,6 +16,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
+import pl.q50.app.i18n.Strings;
+
 /**
  * Writes a snapshot of every channel at the sampling tick (10 Hz) to CSV:
  *   q50_YYYYMMDD_HHMMSS.csv          t_ms, marker, s<type>_0, s<type>_1, s<type>_2, ...
@@ -69,7 +71,7 @@ public final class CsvLogger {
         }
         error = null;
         if (!dir.isDirectory() && !dir.mkdirs()) {
-            return "Nie można utworzyć katalogu " + dir;
+            return Strings.get().cannotCreateDir + dir;
         }
         String stamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
         File csv = new File(dir, "q50_" + stamp + ".csv");
@@ -86,7 +88,7 @@ public final class CsvLogger {
             writer.write(h.append('\n').toString());
         } catch (IOException e) {
             closeQuietly();
-            return "Błąd zapisu: " + e.getMessage();
+            return Strings.get().writeError + e.getMessage();
         }
         file = csv;
         startMs = SystemClock.uptimeMillis();
@@ -171,7 +173,7 @@ public final class CsvLogger {
                 Channel c = columns.get(i);
                 w.write(c.type + "\t" + c.name + "\t" + c.vendor + "\t" + c.vehicle + "\t" + c.maxRange + "\t"
                         + c.resolution + "\t" + (c.def == null ? "" : c.def.key) + "\t"
-                        + (c.def == null ? "" : c.def.label) + "\n");
+                        + (c.def == null ? "" : c.def.labelEn) + "\n");
             }
         } finally {
             w.close();

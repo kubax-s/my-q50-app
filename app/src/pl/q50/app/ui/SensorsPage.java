@@ -11,13 +11,13 @@ import java.util.List;
 import pl.q50.app.data.Channel;
 import pl.q50.app.data.DataHub;
 import pl.q50.app.data.Fmt;
+import pl.q50.app.i18n.Strings;
 
 /**
  * Sensor explorer: every sensor the head unit exposes, with live values[0..2], update rate and
  * observed range. Tapping a row shows a 20 s chart – the main tool for mapping unknown signals.
  */
 final class SensorsPage implements Page {
-    private static final String[] FILTERS = {"POJAZD", "ZMIENNE", "WSZYSTKIE"};
     private static final float HEAD_H = 44;
     private static final float ROW_H = 30;
     private static final float DETAIL_H = 104;
@@ -43,7 +43,7 @@ final class SensorsPage implements Page {
     }
 
     public String title() {
-        return "SENSORY";
+        return Strings.get().tabSensors;
     }
 
     public void onShow() {
@@ -61,6 +61,7 @@ final class SensorsPage implements Page {
     }
 
     public void draw(Canvas c, RectF a, Theme th, long now) {
+        Strings tr = Strings.get();
         collect();
         int varying = 0;
         List<Channel> all = hub.channels();
@@ -72,9 +73,9 @@ final class SensorsPage implements Page {
         float hb = a.top + th.px(HEAD_H - 8);
         filterBtn.set(a.left, a.top, a.left + th.px(190), hb);
         resetBtn.set(filterBtn.right + th.px(8), a.top, filterBtn.right + th.px(178), hb);
-        th.button(c, filterBtn, "FILTR: " + FILTERS[filter], Theme.PANEL_HI, Theme.TEXT, 15);
-        th.button(c, resetBtn, "RESET MIN/MAX", Theme.PANEL_HI, Theme.TEXT, 15);
-        c.drawText(all.size() + " sensorów · " + varying + " zmiennych · " + rows.size() + " na liście",
+        th.button(c, filterBtn, tr.filterPrefix + tr.filters[filter], Theme.PANEL_HI, Theme.TEXT, 15);
+        th.button(c, resetBtn, tr.resetMinMax, Theme.PANEL_HI, Theme.TEXT, 15);
+        c.drawText(tr.sensorsSummary(all.size(), varying, rows.size()),
                 a.right, a.top + th.px(24), th.text(14, Theme.DIM, Paint.Align.RIGHT));
 
         // table area
@@ -87,7 +88,7 @@ final class SensorsPage implements Page {
         float[] col = columns(th, table);
         Paint hp = th.text(12, Theme.DIM, Paint.Align.LEFT);
         float y = table.top + th.px(20);
-        String[] heads = {"TYP", "NAZWA / SYGNAŁ", "v0", "v1", "v2", "Hz", "MIN … MAX"};
+        String[] heads = tr.tableHeads;
         for (int i = 0; i < heads.length; i++) {
             c.drawText(heads[i], col[i], y, hp);
         }
@@ -124,7 +125,7 @@ final class SensorsPage implements Page {
         float x = col[1];
         if (ch.def != null) {
             Paint lp = th.bold(14, Theme.ACCENT, Paint.Align.LEFT);
-            String lab = ch.def.label + " ";
+            String lab = ch.def.label() + " ";
             c.drawText(lab, x, y, lp);
             float lw = lp.measureText(lab);
             x += lw;
@@ -152,17 +153,18 @@ final class SensorsPage implements Page {
         Channel ch = selected;
         if (ch == null || !hub.channels().contains(ch)) {
             selected = null;
-            c.drawText("Dotknij wiersza, aby zobaczyć wykres ostatnich 20 s (v0)", (l + r) / 2, (t + b) / 2 + th.px(6),
+            c.drawText(Strings.get().tapRowHint, (l + r) / 2, (t + b) / 2 + th.px(6),
                     th.text(15, Theme.DIM, Paint.Align.CENTER));
             return;
         }
+        Strings tr = Strings.get();
         float infoW = th.px(230);
-        c.drawText("TYP " + ch.type + (ch.def != null ? " · " + ch.def.label : ""), l + th.px(12), t + th.px(24),
+        c.drawText(tr.typePrefix + ch.type + (ch.def != null ? " · " + ch.def.label() : ""), l + th.px(12), t + th.px(24),
                 th.bold(15, Theme.ACCENT, Paint.Align.LEFT));
-        c.drawText(ch.formatted() + (ch.def != null ? " " + ch.def.unit : ""), l + th.px(12), t + th.px(66),
+        c.drawText(ch.formatted() + (ch.def != null ? " " + ch.def.unit() : ""), l + th.px(12), t + th.px(66),
                 th.bold(34, Theme.TEXT, Paint.Align.LEFT));
         Paint sp = th.text(12, Theme.DIM, Paint.Align.LEFT);
-        c.drawText(Theme.fit(sp, ch.vendor + " · zakres " + Fmt.raw(ch.maxRange) + " · rozdz. " + Fmt.raw(ch.resolution),
+        c.drawText(Theme.fit(sp, ch.vendor + " · " + tr.range + " " + Fmt.raw(ch.maxRange) + " · " + tr.resolution + " " + Fmt.raw(ch.resolution),
                 infoW - th.px(12)), l + th.px(12), t + th.px(92), sp);
 
         // 20 s chart of raw v0, auto-scaled
@@ -216,7 +218,7 @@ final class SensorsPage implements Page {
 
     public boolean onTap(float x, float y) {
         if (filterBtn.contains(x, y)) {
-            filter = (filter + 1) % FILTERS.length;
+            filter = (filter + 1) % 3;
             scroll = 0;
             return true;
         }

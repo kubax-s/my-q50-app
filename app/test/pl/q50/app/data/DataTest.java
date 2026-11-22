@@ -26,9 +26,9 @@ public final class DataTest {
         eq("?9", SignalDef.gear(9));
 
         // scaling: oil pressure MPa -> bar, power rpm*Nm -> KM
-        SignalDef oil = new SignalDef(16, "oil_press", "CIŚN. OLEJU", "bar", 10f, 0f, 1, false, null, Float.NaN, Float.NaN);
+        SignalDef oil = new SignalDef(16, "oil_press", "CIŚN. OLEJU", "OIL PRESS.", "bar", "bar", 10f, 0f, 1, false, null, Float.NaN, Float.NaN);
         eq("3.5", oil.formatRaw(0.35f));
-        SignalDef power = new SignalDef(32, "power", "MOC", "KM", 1.42377e-4f, 0f, 0, false, null, Float.NaN, Float.NaN);
+        SignalDef power = new SignalDef(32, "power", "MOC", "POWER", "KM", "PS", 1.42377e-4f, 0f, 0, false, null, Float.NaN, Float.NaN);
         eq("305", power.formatRaw(6400f * 335f)); // ~ rated output at 6400 rpm
 
         // Channel: min/max, varies, history order, rate
@@ -45,6 +45,21 @@ public final class DataTest {
         check(c.historyCount() == Channel.HISTORY, "history capped");
         check(c.history(0) == 5 && c.history(Channel.HISTORY - 1) == Channel.HISTORY + 4, "history order");
         check(Math.abs(c.rateHz - 10f) < 0.01f, "rate ~10 Hz, got " + c.rateHz);
+
+        // i18n: Polish by default, switchable to English
+        eq("MOC", power.label());
+        eq("KM", power.unit());
+        eq("42 sensory · 5 zmiennych · 12 na liście", pl.q50.app.i18n.Strings.get().sensorsSummary(42, 5, 12));
+        eq("Zapisano 1 wiersz", pl.q50.app.i18n.Strings.get().savedRows(1));
+        eq("Zapisano 13 wierszy", pl.q50.app.i18n.Strings.get().savedRows(13));
+        eq("Zapisano 22 wiersze", pl.q50.app.i18n.Strings.get().savedRows(22));
+        pl.q50.app.i18n.Strings.setLanguage("en");
+        eq("POWER", power.label());
+        eq("PS", power.unit());
+        eq("SETTINGS", pl.q50.app.i18n.Strings.get().tabSettings);
+        eq("Saved 2 rows", pl.q50.app.i18n.Strings.get().savedRows(2));
+        pl.q50.app.i18n.Strings.setLanguage("xx");
+        eq("USTAWIENIA", pl.q50.app.i18n.Strings.get().tabSettings);
 
         if (failures > 0) {
             System.out.println(failures + " FAILED");

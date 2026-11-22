@@ -8,6 +8,7 @@ import pl.q50.app.data.Channel;
 import pl.q50.app.data.DataHub;
 import pl.q50.app.data.Fmt;
 import pl.q50.app.data.SignalDef;
+import pl.q50.app.i18n.Strings;
 
 /** Big-number overview of the mapped signals: 4 × 3 tiles, the last one shows all four tyres. */
 final class OverviewPage implements Page {
@@ -16,7 +17,8 @@ final class OverviewPage implements Page {
             "coolant", "oil_temp", "oil_press", "torque",
             "power", "g_lat", "g_long", null, // null = tyre tile
     };
-    private static final String[][] TYRES = {{"tpms_fl", "LP"}, {"tpms_fr", "PP"}, {"tpms_rl", "LT"}, {"tpms_rr", "PT"}};
+    /** Same order as Strings.tyreShort: FL, FR, RL, RR. */
+    private static final String[] TYRES = {"tpms_fl", "tpms_fr", "tpms_rl", "tpms_rr"};
 
     private final DataHub hub;
 
@@ -25,7 +27,7 @@ final class OverviewPage implements Page {
     }
 
     public String title() {
-        return "PRZEGLĄD";
+        return Strings.get().tabOverview;
     }
 
     public void onShow() {
@@ -39,11 +41,11 @@ final class OverviewPage implements Page {
         float top = a.top;
         if (hub.demoActive()) {
             th.panel(c, a.left, top, a.right, top + th.px(28), 0x33FFD24D);
-            c.drawText("DEMO – nie wykryto sensorów pojazdu, dane są syntetyczne",
+            c.drawText(Strings.get().demoBanner,
                     a.centerX(), top + th.px(20), th.bold(15, Theme.DEMO, Paint.Align.CENTER));
             top += th.px(34);
         } else if (hub.vehicleCount() == 0) {
-            c.drawText("Brak sensorów pojazdu", a.centerX(), top + th.px(20), th.bold(15, Theme.HOT, Paint.Align.CENTER));
+            c.drawText(Strings.get().noVehicleSensors, a.centerX(), top + th.px(20), th.bold(15, Theme.HOT, Paint.Align.CENTER));
             top += th.px(34);
         }
         float gap = th.px(8);
@@ -65,11 +67,11 @@ final class OverviewPage implements Page {
     private void drawTile(Canvas c, Theme th, Channel ch, String key, float l, float t, float r, float b) {
         th.panel(c, l, t, r, b, Theme.PANEL);
         SignalDef d = ch == null ? null : ch.def;
-        String label = d == null ? key.toUpperCase() : d.label;
+        String label = d == null ? key.toUpperCase() : d.label();
         c.drawText(label, l + th.px(10), t + th.px(22), th.text(14, Theme.DIM, Paint.Align.LEFT));
         if (ch == null || !ch.hasValue()) {
             c.drawText("—", (l + r) / 2, (t + b) / 2 + th.px(16), th.bold(44, Theme.LINE, Paint.Align.CENTER));
-            c.drawText(ch == null ? "brak sensora" : "brak danych", (l + r) / 2, b - th.px(10),
+            c.drawText(ch == null ? Strings.get().noSensor : Strings.get().noData, (l + r) / 2, b - th.px(10),
                     th.text(12, Theme.DIM, Paint.Align.CENTER));
             return;
         }
@@ -81,7 +83,7 @@ final class OverviewPage implements Page {
             color = Theme.COLD;
         }
         c.drawText(ch.formatted(), (l + r) / 2, (t + b) / 2 + th.px(18), th.bold(48, color, Paint.Align.CENTER));
-        c.drawText(d.unit, r - th.px(10), b - th.px(10), th.text(14, Theme.DIM, Paint.Align.RIGHT));
+        c.drawText(d.unit(), r - th.px(10), b - th.px(10), th.text(14, Theme.DIM, Paint.Align.RIGHT));
         if (!"gear".equals(d.format)) {
             String range = "max " + d.formatRaw(ch.max);
             if (d.key.startsWith("g_")) {
@@ -93,18 +95,18 @@ final class OverviewPage implements Page {
 
     private void drawTyres(Canvas c, Theme th, float l, float t, float r, float b) {
         th.panel(c, l, t, r, b, Theme.PANEL);
-        c.drawText("OPONY", l + th.px(10), t + th.px(22), th.text(14, Theme.DIM, Paint.Align.LEFT));
+        c.drawText(Strings.get().tyres, l + th.px(10), t + th.px(22), th.text(14, Theme.DIM, Paint.Align.LEFT));
         c.drawText("bar", r - th.px(10), b - th.px(10), th.text(14, Theme.DIM, Paint.Align.RIGHT));
         float cx = (l + r) / 2;
         float top = t + th.px(30);
         float rowH = (b - th.px(26) - top) / 2;
         for (int i = 0; i < TYRES.length; i++) {
-            Channel ch = hub.signal(TYRES[i][0]);
+            Channel ch = hub.signal(TYRES[i]);
             float x = i % 2 == 0 ? (l + cx) / 2 : (cx + r) / 2;
             float y = top + (i / 2) * rowH + rowH * 0.62f;
             String val = ch == null || !ch.hasValue() ? "—" : Fmt.number(ch.value(), 2);
             c.drawText(val, x, y, th.bold(26, Theme.TEXT, Paint.Align.CENTER));
-            c.drawText(TYRES[i][1], x, y + th.px(16), th.text(11, Theme.DIM, Paint.Align.CENTER));
+            c.drawText(Strings.get().tyreShort[i], x, y + th.px(16), th.text(11, Theme.DIM, Paint.Align.CENTER));
         }
     }
 }
