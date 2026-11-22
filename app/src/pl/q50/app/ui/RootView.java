@@ -168,7 +168,11 @@ public final class RootView extends View {
         bannerAlertId = a.id;
         int bg;
         int fg;
-        if (a.severity == AlertEngine.CRITICAL) {
+        if (AlertEngine.TURBO_COOLDOWN.equals(a.id)) {
+            int level = analytics.turbo.level();
+            bg = Theme.turboColor(level);
+            fg = level >= 2 ? Theme.TEXT : Theme.BG;
+        } else if (a.severity == AlertEngine.CRITICAL) {
             bg = Theme.HOT;
             fg = Theme.TEXT;
         } else if (a.severity == AlertEngine.WARNING) {

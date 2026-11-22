@@ -34,6 +34,7 @@ public final class LogicTest {
         gMeter();
         alertHistory();
         perfRejectsJumps();
+        turboHotOil();
         if (failures > 0) {
             System.out.println(failures + " FAILED");
             System.exit(1);
@@ -281,6 +282,48 @@ public final class LogicTest {
         s.oilTemp = 40;
         s.rpm = 4500;
         check(WarmUp.coldOilUnderLoad(s), "cold oil at 4500 rpm");
+    }
+
+    static void turboHotOil() {
+        check(TurboCooldown.heatFactor(90f) == 1f && TurboCooldown.heatFactor(130f) == 1.5f, "heat factor");
+        check(TurboCooldown.coolFactor(Float.NaN) == 1f && TurboCooldown.coolFactor(120f) == 0.5f, "cool factor");
+        near("cool factor at 110 x100", 75, Math.round(TurboCooldown.coolFactor(110f) * 100), 0);
+
+        TurboCooldown c = new TurboCooldown();
+        Snapshot s = new Snapshot();
+        s.rpm = 5000;
+        s.speed = 150;
+        s.power = 250;
+        s.throttle = 90;
+        s.oilTemp = 120;
+        long t = 0;
+        for (; t <= 60000; t += TICK) {
+            s.now = t;
+            c.update(s);
+        }
+        near("60 s hard on 120 °C oil", 135, Math.round(c.remainingS()), 1);
+        check(c.level() == TurboCooldown.LEVEL_RED && c.oilSlowsCooling(), "red, hot oil slows cooling");
+        s.rpm = 700;
+        s.speed = 0;
+        s.power = 5;
+        s.throttle = 0;
+        long idle0 = t;
+        for (; t <= idle0 + 30000; t += TICK) {
+            s.now = t;
+            c.update(s);
+        }
+        near("30 s idle on 120 °C oil cools only 15 s", 120, Math.round(c.remainingS()), 1);
+        s.oilTemp = 90;
+        while (c.level() == TurboCooldown.LEVEL_RED) {
+            s.now = t += TICK;
+            c.update(s);
+        }
+        near("orange from 45 s", 45, Math.round(c.remainingS()), 1);
+        while (c.level() == TurboCooldown.LEVEL_ORANGE) {
+            s.now = t += TICK;
+            c.update(s);
+        }
+        near("green below 15 s", 15, Math.round(c.remainingS()), 1);
     }
 
     /** A data gap that makes speed jump 0 -> 60 -> 100 must not produce timing results. */

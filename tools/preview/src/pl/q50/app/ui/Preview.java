@@ -273,6 +273,32 @@ public final class Preview {
         ImageIO.write(sheet, "png", out);
     }
 
+    /** Engine tab's turbo panel at each urgency level, side by side: build/preview/pl/turbo-levels.png. */
+    private void turboLevels(AppHost host) throws IOException {
+        Strings.setLanguage(Strings.PL);
+        windingRoad(150); // more hard driving so the cool-down starts in the red
+        RootView root = new RootView(new Context(), hub, logger, analytics, host);
+        root.setPreviewSize(W, H);
+        int[] levels = {2, 1, 0};
+        BufferedImage strip = new BufferedImage(3 * 788 + 4 * 16, 364 + 32, BufferedImage.TYPE_INT_RGB);
+        Graphics2D g = strip.createGraphics();
+        g.setColor(new Color(0x05070A));
+        g.fillRect(0, 0, strip.getWidth(), strip.getHeight());
+        for (int i = 0; i < levels.length; i++) {
+            idle(0.1f, 1);
+            while (analytics.turbo.level() != levels[i]) {
+                idle(0.1f, 1);
+            }
+            idle(1.5f, 1);
+            SystemClock.now = t;
+            root.showPage(2);
+            BufferedImage img = new BufferedImage(W, H, BufferedImage.TYPE_INT_RGB);
+            root.onDraw(new Canvas(img));
+            g.drawImage(img.getSubimage(800, 112, 788, 364), 16 + i * (788 + 16), 16, null);
+        }
+        ImageIO.write(strip, "png", new File("build/preview/pl/turbo-levels.png"));
+    }
+
     public static void main(String[] args) throws IOException {
         Preview p = new Preview();
         p.run();
@@ -299,7 +325,7 @@ public final class Preview {
             }
 
             public String versionText() {
-                return "0.4.1 (preview)";
+                return "0.4.2 (preview)";
             }
 
             public int vehicleSensorCount() {
@@ -329,6 +355,7 @@ public final class Preview {
             }
             contactSheet(files, titles, new File(dir, "all.png"));
         }
+        p.turboLevels(host);
         System.out.println("Rendered previews to build/preview/{pl,en} (simulated " + p.t / 1000 + " s of driving)");
     }
 }

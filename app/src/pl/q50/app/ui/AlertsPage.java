@@ -54,7 +54,9 @@ final class AlertsPage implements Page {
             rows[i].set(l, top, r, top + rowH - th.px(3));
             boolean active = al.active && enabled;
             th.panel(c, l, top, r, top + rowH - th.px(3), active && snoozed == 0 ? Theme.PANEL_HI : Theme.PANEL);
-            int dot = !enabled ? Theme.LINE : active ? severityColor(al.severity) : Theme.OK;
+            int alertColor = AlertEngine.TURBO_COOLDOWN.equals(id) ? Theme.turboColor(an.turbo.level())
+                    : severityColor(al.severity);
+            int dot = !enabled ? Theme.LINE : active ? alertColor : Theme.OK;
             th.fill.setColor(dot);
             float cy = top + (rowH - th.px(3)) / 2;
             c.drawCircle(l + th.px(16), cy, th.px(6), th.fill);
@@ -69,7 +71,7 @@ final class AlertsPage implements Page {
                 sc = Theme.DIM;
             } else if (active) {
                 state = al.text;
-                sc = severityColor(al.severity);
+                sc = alertColor;
             } else {
                 state = t.alertOff;
                 sc = Theme.OK;

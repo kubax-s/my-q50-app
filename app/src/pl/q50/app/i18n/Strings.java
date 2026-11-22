@@ -129,8 +129,6 @@ public final class Strings {
     public final String[] runNames; // same order as PerfTimer runs
     public final String colLast;
     public final String colBest;
-    public final String armed;
-    public final String notArmed;
     public final String timing;
     public final String resetRecords;
     public final String dynoTitle;
@@ -283,8 +281,6 @@ public final class Strings {
                 : new String[]{"0–100 km/h", "1/4 mili", "60–100 km/h", "80–120 km/h", "100–200 km/h", "100–0 km/h"};
         colLast = en ? "LAST" : "OSTATNI";
         colBest = en ? "BEST" : "REKORD";
-        armed = en ? "Ready – launch!" : "Gotowy – ruszaj!";
-        notArmed = en ? "Stop the car to time a launch" : "Zatrzymaj auto, aby zmierzyć start";
         timing = en ? "timing…" : "pomiar…";
         resetRecords = en ? "RESET RECORDS" : "RESET REKORDÓW";
         dynoTitle = en ? "DYNO (full throttle)" : "DYNO (pełny gaz)";
@@ -378,6 +374,11 @@ public final class Strings {
     public String alertTurbo(int seconds) {
         return en ? "Turbo cool-down: idle for " + seconds + " s more"
                 : "Schłodzenie turbin: jeszcze " + seconds + " s na wolnych obrotach";
+    }
+
+    public String turboHotOil(String temp) {
+        return en ? "Hot oil (" + temp + " °C) – cooling down takes longer"
+                : "Gorący olej (" + temp + " °C) – schładzanie trwa dłużej";
     }
 
     public String turboSeconds(int seconds) {

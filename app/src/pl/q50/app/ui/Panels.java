@@ -85,13 +85,18 @@ public final class Panels {
         title(c, th, tr.turboTitle, l, t);
         TurboCooldown tc = an.turbo;
         boolean need = tc.needsCooldown();
-        int color = need ? Theme.ACCENT : Theme.OK;
+        int color = need ? Theme.turboColor(tc.level()) : Theme.OK;
         String big = need ? tr.turboSeconds(Math.round(tc.remainingS())) : tr.turboOk;
         Paint bp = th.bold(30, color, Paint.Align.LEFT);
         c.drawText(Theme.fit(bp, big, r - l - th.px(24)), l + th.px(12), t + th.px(64), bp);
         bar(c, th, l + th.px(12), t + th.px(76), r - th.px(12), tc.fraction(), color);
         Paint k = th.text(13, Theme.DIM, Paint.Align.LEFT);
         c.drawText(Theme.fit(k, need ? tr.turboCooling : tr.turboHint, r - l - th.px(24)), l + th.px(12), t + th.px(112), k);
+        if (tc.oilSlowsCooling()) {
+            Paint hp = th.text(13, Theme.ACCENT, Paint.Align.LEFT);
+            c.drawText(Theme.fit(hp, tr.turboHotOil(Fmt.number(tc.oilTemp(), 0)), r - l - th.px(24)), l + th.px(12),
+                    t + th.px(132), hp);
+        }
     }
 
     static void oil(Canvas c, Theme th, Analytics an, float l, float t, float r, float b) {
@@ -264,11 +269,6 @@ public final class Panels {
         title(c, th, tr.perfTitle, l, t);
         resetOut.set(r - th.px(150), t + th.px(6), r - th.px(8), t + th.px(32));
         th.button(c, resetOut, tr.resetRecords, Theme.PANEL_HI, Theme.TEXT, 12);
-        boolean armed = p.armed();
-        Paint sp = th.bold(13, armed ? Theme.OK : Theme.DIM, Paint.Align.LEFT);
-        float titleW = th.bold(14, Theme.DIM, Paint.Align.LEFT).measureText(tr.perfTitle);
-        float sx = l + th.px(24) + titleW;
-        c.drawText(Theme.fit(sp, armed ? tr.armed : tr.notArmed, resetOut.left - sx - th.px(8)), sx, t + th.px(22), sp);
 
         float w = r - l;
         float cName = l + th.px(12);

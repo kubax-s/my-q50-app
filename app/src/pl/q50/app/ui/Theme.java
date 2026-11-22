@@ -20,6 +20,11 @@ public final class Theme {
     public static final int HOT = 0xFFFF4D4D;
     public static final int DEMO = 0xFFFFD24D;
 
+    /** Turbo cool-down urgency: red = really wait, orange = should wait, green = (almost) done. */
+    public static int turboColor(int level) {
+        return level >= 2 ? HOT : level == 1 ? ACCENT : OK;
+    }
+
     public float s = 1f;
     public final Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
     public final Paint stroke = new Paint(Paint.ANTI_ALIAS_FLAG);
