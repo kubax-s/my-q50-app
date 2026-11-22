@@ -370,11 +370,6 @@ public final class Strings {
     }
 
 
-    public String turboZone(int level) {
-        if (level >= 2) return en ? "DON'T SWITCH OFF" : "NIE GAŚ SILNIKA";
-        if (level == 1) return en ? "OK TO SWITCH OFF" : "MOŻNA ZGASIĆ";
-        return en ? "EXTRA MARGIN" : "ZAPAS NA SPOKOJNIE";
-    }
 
     public String turboOkIn(int seconds) {
         return en ? "OK to switch off in " + seconds + " s" : "można zgasić za " + seconds + " s";

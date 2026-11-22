@@ -90,15 +90,10 @@ public final class Panels {
         int level = tc.level();
         int color = need ? Theme.turboColor(level) : Theme.OK;
 
-        // headline: zone + seconds (to "OK" while red, to fully cooled otherwise)
-        String head = need ? tr.turboZone(level) : tr.turboOk;
+        // headline: seconds in the zone colour (to "OK" while red, to fully cooled otherwise)
         int secs = (int) Math.ceil(level >= 2 ? tc.secondsUntilOk() : tc.remainingS());
-        Paint sp = th.bold(30, color, Paint.Align.RIGHT);
-        String num = need ? secs + " s" : "";
-        float numW = need ? sp.measureText(num) : 0;
-        if (need) c.drawText(num, x1, t + th.px(60), sp);
-        Paint hp = th.bold(19, color, Paint.Align.LEFT);
-        c.drawText(Theme.fit(hp, head, x1 - x0 - numW - th.px(10)), x0, t + th.px(58), hp);
+        Paint hp = th.bold(30, color, Paint.Align.LEFT);
+        c.drawText(Theme.fit(hp, need ? secs + " s" : tr.turboOk, x1 - x0), x0, t + th.px(60), hp);
 
         turboBar(c, th, tc, x0, t + th.px(72), x1, t + th.px(90), need);
 
