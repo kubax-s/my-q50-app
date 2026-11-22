@@ -4,6 +4,7 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.os.Build;
 import android.os.SystemClock;
 
 import java.util.HashMap;
@@ -39,8 +40,14 @@ public final class VehicleSensorSource implements SensorEventListener {
     public static boolean isVehicle(Sensor s) {
         String vendor = s.getVendor() == null ? "" : s.getVendor().toLowerCase();
         String name = s.getName() == null ? "" : s.getName();
+        if (vendor.indexOf("ygomi") >= 0 || name.indexOf("VS_ID") >= 0) {
+            return true;
+        }
+        // Fallback by type range only on Android 2.3 (InTouch): newer Android versions define
+        // their own standard sensors in 12..53 (e.g. 13 = ambient temperature), which on a
+        // phone or emulator must not be mistaken for vehicle signals.
         int t = s.getType();
-        return vendor.indexOf("ygomi") >= 0 || name.indexOf("VS_ID") >= 0 || (t >= 12 && t <= 53);
+        return Build.VERSION.SDK_INT <= 10 && t >= 12 && t <= 53;
     }
 
     public int sensorCount() {
