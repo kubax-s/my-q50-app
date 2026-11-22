@@ -1,257 +1,198 @@
 # Q50 App – analiza i plan pracy
 
-Aplikacja (TypeScript, Android) instalowana na systemie multimedialnym Infiniti Q50 (V37) **3.0t VR30DDTT**, wyświetlająca dane z auta przez port OBD-II.
+Aplikacja instalowana na **fabrycznym systemie InTouch** (App Garage, pakiet `.epk` z pendrive'a) w Infiniti Q50 (V37) z silnikiem **3.0t VR30DDTT**, wyświetlająca jak najwięcej danych o samochodzie – bez adaptera OBD i bez telefonu.
 
 ---
 
-## 1. Skąd w ogóle wziąć dane – ograniczenia, które kształtują cały projekt
+## 1. Platforma – co wiemy o InTouch
 
-| Źródło | Co daje | Uwagi |
-|---|---|---|
-| **Port OBD-II + adapter ELM327 / STN** | Wszystko, co silnik i inne moduły udostępniają po CAN | Główne źródło. Q50 komunikuje się po ISO 15765-4 (CAN 11-bit, 500 kbit/s). |
-| Standardowe PID-y (SAE J1979, mode 01/02/03/04/06/07/09/0A) | Obroty, prędkość, temperatury, ciśnienia, trymy paliwa, lambda, błędy, VIN | Działają na każdym aucie, gwarantowane – ale tylko dane „emisyjne” z ECM. |
-| Rozszerzone PID-y producenta (mode 21/22, UDS) | Temp. ATF, aktualny bieg, ciśnienia w oponach, temp. oleju, prędkości turbin, knock, błędy z ABS/SRS/BCM | Nieudokumentowane publicznie – trzeba je **odkryć i zweryfikować na Twoim aucie** (etap 4). |
-| Radio/urządzenie z Androidem (GPS, ew. akcelerometr) | Prędkość GPS, trasa, przeciążenia | Radia z Androidem mają GPS; akcelerometr nie zawsze – przy jego braku G-metr liczony z OBD/GPS. |
-| Ręcznie wpisywane dane | Tankowania, ceny paliwa, serwisy, koszty | Do historii i statystyk kosztów. |
+### 1.1 System
+Źródła: projekty społeczności [oneezeeroo/Q50-Reverse-Engineering](https://github.com/oneezeeroo/Q50-Reverse-Engineering), [bugjosh/appgarage-dash](https://github.com/bugjosh/appgarage-dash) (działająca aplikacja zweryfikowana na Q60 Red Sport 400 2018, VR30DDTT), [doudineugene-dot/Q50-gtr-](https://github.com/doudineugene-dot/Q50-gtr-) oraz analiza dostarczonego pliku `gtr.epk`.
 
-### 1.1 Platforma docelowa: system multimedialny w aucie
+| Cecha | Wartość |
+|---|---|
+| Roczniki z App Garage | Q50 MY2014–2019, Q60 (V37) MY2017–2019. **MY2020+ nie ma App Garage.** |
+| System aplikacji | Zmodyfikowany **Android 2.3.7 (API 10)**, CPU **x86** (Intel Atom), działa obok linuksowej części systemu (nawigacja, „carwings”) |
+| Ekrany | dwa, ok. **800×480**; aplikacje domyślnie na dolnym (`ivi.defaultDisplay=LOWER`) |
+| Instalacja | pendrive **FAT32**, plik `.epk` w katalogu głównym → *APPS → App Garage → Install Apps via USB* |
+| Aktualizacja | nowa wersja musi mieć wyższy `versionCode` i ten sam klucz podpisu APK |
 
-| Wariant radia | Czy da się wgrać własną aplikację? | Wniosek |
-|---|---|---|
-| **Fabryczny InTouch** (dwa ekrany, 2014–2019) | **Brak oficjalnej możliwości.** Aplikacje w „App Garage” pochodziły wyłącznie z katalogu Infiniti (platforma Airbiquity Choreo) i były dodawane przez aplikację InTouch na telefonie. USB w dokumentacji serwisowej służy do aktualizacji oprogramowania. Na forach pojawia się opcja „install via USB”, ale użytkownicy wgrywający pliki `.apk` dostawali „no apps found”. Jedyny znany przypadek uruchomienia własnego kodu to reverse engineering z dostępem root (Linux, Intel Atom, karta microSD na płycie) bez dostępu do wyświetlaczy (r/CarHacking, 2022). | Nie nadaje się jako platforma bez głębokiego hakowania sprzętu. |
-| **Zamienne radio z Androidem** (np. pionowy ekran 10–13" zastępujący oba ekrany InTouch) | **Tak.** Pełny Android, instalacja APK z pendrive'a USB lub ze Sklepu Play. | **Rekomendowana platforma docelowa.** |
-| Moduł CarPlay/Android Auto (retrofit na fabryczny ekran) | Nie wprost: moduły zwykle działają na Linuksie, a aplikacja działałaby na telefonie i wyświetlała się przez Android Auto (szablony, ograniczenia kategorii). | Wariant awaryjny. |
-| Telefon/tablet w uchwycie | Tak. | Ta sama aplikacja (Android) działa też tu, więc przyda się do developmentu i testów. |
+### 1.2 Format `.epk` (zweryfikowany na `gtr.epk`)
 
-**Decyzja projektowa:** budujemy **aplikację na Androida (APK)** zoptymalizowaną pod ekran radia w aucie: orientacja pozioma i pionowa, duże elementy, start razem z radiem. Ten sam kod uruchomi się na telefonie z Androidem.
+```
+0x000  ".epk"            magic
+0x004  0x0002            wersja EPK (v2)
+0x006  0x0002            typ payloadu (2 = APK w znanych pakietach)
+0x008  0x0001            liczba bloków
+0x00A  0x0080            długość klucza (128 B = RSA-1024)
+0x00C  256 B             klucz AES zaszyfrowany RSA (wykorzystane 128 B)
+0x10C  128 B             nazwa pliku: "gtr.apk"
+0x18C  4 B (BE)          długość danych: 2 156 512
+0x190  …                 APK zaszyfrowany AES-CBC (długość podzielna przez 16, entropia ≈ 8 bit/B)
+```
 
-Źródła danych na radiu z Androidem:
-- **Adapter OBD-II na Bluetooth** (Classic lub BLE, na Androidzie działają oba) – główne źródło.
-- **Adapter OBD-II na USB** (np. OBDLink EX / ELM327 USB, układ FTDI/CH340) – stabilniejszy, bez parowania; radio ma i tak port USB.
-- **CAN-box radia** (dekoder Raise/Hiworld/Simple Soft dołączony do radia) – często podaje radiu drzwi, klimatyzację, czasem TPMS; do sprawdzenia, czy producent radia udostępnia te dane aplikacjom.
+**Najważniejsze:** EPK to tylko **szyfrowanie kluczem publicznym** – do zbudowania pakietu wystarcza **publiczny certyfikat OBU** z firmware (`CN=tt18002`, wystawca `IT5.YGOMI.COM CA`, RSA-1024), który jest publicznie dostępny w projektach społeczności. Prywatnego klucza nie potrzebujemy. Sam APK jest podpisany zwykłym, własnym kluczem (podpis v1/JAR).
 
-### 1.2 Silnik: VR30DDTT (3.0 V6 twin-turbo, bezpośredni wtrysk) + 7-biegowy automat Jatco
+### 1.3 Skąd aplikacja bierze dane z auta
+InTouch udostępnia sygnały z magistrali CAN jako **standardowe sensory Androida** (`SensorManager`, vendor „Ygomi”, nazwy `VS_ID_*`, typy **12–53**). Wymagane uprawnienie `com.ygomi.permission.IVI_CAN_READ` (przyznawane automatycznie). Manifest z `ivi.isDistractive="false"` pozwala używać aplikacji w czasie jazdy.
 
-To dobra wiadomość: ECU Nissana (nie Mercedesa), więc standardowe PID-y plus rozszerzone PID-y Nissana (mode 21/22) w zasięgu. Dla tego silnika szczególnie wartościowe są:
-- doładowanie (zadane vs rzeczywiste), osobno odchyłka regulacji,
-- prędkości obrotowe obu turbosprężarek (silnik ma czujniki prędkości turbin),
-- temperatura powietrza za intercoolerem (VR30 ma intercooler wodny z osobną pompą; wzrost IAT pod obciążeniem to typowy objaw problemu z pompą lub obiegiem chłodzenia intercoolera),
-- wycofywanie zapłonu (knock) per cylinder / per bank,
-- ciśnienie paliwa w układzie wysokiego ciśnienia (DI),
-- temperatura oleju silnikowego i oleju skrzyni (ATF).
+Według appgarage-dash na żywo jest **~42 sygnały**. Zmapowane dotąd:
+
+| Typ | Sygnał | Skala (VR30) |
+|---:|---|---|
+| 12 | Moment obrotowy | ≈ Nm |
+| 13 | Obroty silnika | bezpośrednio |
+| 14 | Temp. płynu chłodzącego | °C |
+| 15 | Temp. oleju | °C |
+| 16 | **Ciśnienie oleju** | MPa (×10 = bar) |
+| 17 | Prędkość | km/h |
+| 20 / 21 | Przeciążenie boczne / wzdłużne | ~g |
+| 22 | Bieg | P=1, R=2, N=3, D=4, M1–M7 = 16–22 |
+| 23 | Przepustnica | % |
+| 32 | Moc | raw × 1,047e-4 = kW |
+| 36–39 | Ciśnienie w oponach PP, LP, PT, LT | psi |
+
+**Niedostępne** z CAN radia (wg appgarage-dash): doładowanie/MAP, AFR/lambda, knock, kąt zapłonu – to dane ze sterownika silnika, które czytają narzędzia typu EcuTek. Komercyjna aplikacja „Red Sport” (vqapps) reklamuje jednak wskaźnik doładowania z funkcją „AUTO FIND” – do zbadania, z czego go wylicza.
+
+**~27 typów sensorów pozostaje niezmapowanych** – to nasze pole do odkrycia (etap 2).
+
+### 1.4 Konsekwencje techniczne
+
+- **React Native / nowoczesny Android odpadają** – API 10, Dalvik, brak Gradle (AGP nie wspiera tak niskiego `minSdk`).
+- Sprawdzona ścieżka budowania: `javac --release 7/8` → `d8 --min-api 10` → `aapt` → `zipalign` → `apksigner` (tylko v1) → pakowanie do `.epk`.
+- UI rysowane ręcznie na `Canvas` (bez AndroidX, bez bibliotek) – lekko i płynnie na Atomie.
+- **Gdzie TypeScript:** WebView w Androidzie 2.3 to bardzo stary WebKit (bez `requestAnimationFrame`, wolny canvas) – płynne zegary w TS w aucie są ryzykowne. TypeScript ma sens w: narzędziu do budowania `.epk` (Node `crypto`), symulatorze danych, aplikacji webowej do analizy logów zgranych z auta. Ewentualny wariant „Java + WebView z TS (ES5)” do sprawdzenia testem wydajności w etapie 1.
 
 ---
 
 ## 2. Co aplikacja może wyświetlać
 
-Oznaczenia dostępności: **[S]** – standard OBD-II (pewne, o ile ECU zgłasza wsparcie PID), **[P]** – PID producenta (do odkrycia/weryfikacji), **[T]** – telefon, **[O]** – obliczane z innych danych, **[R]** – dane wpisywane ręcznie.
+Oznaczenia: **[N]** – natywny sensor InTouch (potwierdzony), **[?]** – możliwy wśród niezmapowanych sensorów (do zbadania), **[O]** – obliczane, **[X]** – niedostępne bez zewnętrznego źródła.
 
-### 2.1 Silnik – na żywo
-- Obroty, prędkość pojazdu, obciążenie obliczeniowe i absolutne **[S]**
-- Pozycja przepustnicy / pedału gazu **[S]**
-- Temperatura płynu chłodzącego **[S]**, temperatura oleju **[S – PID 0x5C, jeśli wspierany / P]**
-- Temperatura powietrza dolotowego (IAT) **[S]** i za intercoolerem **[P]**, temperatura otoczenia **[S]** → różnica IAT − otoczenie jako wskaźnik sprawności intercoolera **[O]**
-- Przepływ powietrza MAF (g/s) **[S]**
-- Ciśnienie w kolektorze (MAP) i ciśnienie atmosferyczne **[S]** → **ciśnienie doładowania = MAP − Baro [O]**; PID 0x0B ma limit 255 kPa abs., przy tuningu potrzebny PID rozszerzony (0x87) lub PID Nissana
-- Doładowanie zadane vs rzeczywiste (PID 0x70, jeśli wspierany) **[S/P]** → odchyłka regulacji = wycieki doładowania, problemy z wastegate/turbo **[O]**
-- Kąt wyprzedzenia zapłonu **[S]**, wycofanie zapłonu przez spalanie stukowe per cylinder **[P]** – kluczowe przy VR30 (jakość paliwa, tuning)
-- Trymy paliwa krótko/długoterminowe, osobno dla banku 1 i 2 (V6) **[S]** – świetny wskaźnik nieszczelności dolotu/wtrysków
-- Sondy lambda / współczynnik ekwiwalencji (zadany i rzeczywisty) **[S]**
-- Ciśnienie paliwa na listwie wysokiego ciśnienia **[S/P]** (bezpośredni wtrysk) – spadek pod obciążeniem = problem z pompą HPFP
-- Temperatura katalizatora **[S]**
-- Napięcie modułu sterującego (≈ napięcie instalacji) **[S]**
-- Czas od uruchomienia silnika **[S]**, poziom paliwa w zbiorniku **[S]**
-- Prędkość obu turbosprężarek (VR30 ma czujniki prędkości turbin) **[P]** + porównanie bank 1 vs bank 2 **[O]**
-- Liczniki wypadania zapłonu per cylinder **[S mode 06 / P]**
+### 2.1 Silnik (na żywo)
+- Obroty, moment, moc (kW/KM) **[N]**
+- Temperatura płynu i **oleju** **[N]**
+- **Ciśnienie oleju** **[N]** – rzadkość, fabrycznie niewidoczne na zegarach
+- Przepustnica **[N]**
+- Temp. ATF, napięcie instalacji, temp. zewnętrzna, poziom paliwa, chwilowe zużycie paliwa **[?]**
+- Doładowanie, AFR, knock, kąt zapłonu, temp. dolotu **[X / ? – patrz etap 5]**
 
-### 2.2 Skrzynia biegów
-- Temperatura oleju ATF **[P]** – jedna z najcenniejszych metryk (jazda dynamiczna, upały, holowanie)
-- Aktualny / zadany bieg **[P]**, poślizg sprzęgła zmiennika momentu (lock-up) **[P/O]**
-- Obroty wału wejściowego/wyjściowego **[P]**
-- Wyliczany bieg z ilorazu RPM/prędkość **[O]** – działa nawet bez PID producenta
+### 2.2 Jazda i podwozie
+- Prędkość, bieg (w tym tryb manualny M1–M7) **[N]**
+- G-metr: przeciążenia boczne i wzdłużne, „koło przyczepności”, maksima **[N+O]**
+- **Ciśnienie w każdej oponie** na grafice auta z góry **[N]**
+- Kąt skrętu kierownicy (DAS), prędkości kół, ciśnienie hamulca **[?]**
 
-### 2.3 Spalanie i koszty
-- Spalanie chwilowe (l/100 km, l/h na postoju) **[O]**
-  - benzyna: `paliwo [g/s] = MAF / (14.7 × λ_zadana)`, przeliczone przez gęstość ~0,745 kg/l,
-  - lub bezpośrednio z PID 0x5E (fuel rate), jeśli wspierany **[S]**,
-  - pod pełnym doładowaniem VR30 wzbogaca mieszankę – dlatego korekta przez λ zadaną jest konieczna.
-- Średnie: bieżący przejazd, dzień, miesiąc, od tankowania **[O]**
-- Zasięg na pozostałym paliwie (poziom paliwa × pojemność zbiornika ÷ średnie spalanie) **[O]**
-- Koszt przejazdu w PLN (z ceną z ostatniego tankowania) **[O+R]**
-- Kalibracja: porównanie spalania wyliczonego z realnym z dystrybutora → współczynnik korekty **[R+O]**
+### 2.3 Zdrowie silnika (przewaga nad zwykłymi zegarami)
+- **Krzywa ciśnienie oleju vs obroty i temperatura** – zapis wzorca i ostrzeżenie, gdy ciśnienie spada poniżej normy dla danych warunków **[N+O]**
+- **Gotowość do dynamicznej jazdy:** ostrzeżenie przy wysokich obrotach / pełnym gazie, gdy olej jest zimny (np. < 60 °C), pasek „rozgrzewania” **[N+O]**
+- Czas nagrzewania płynu i oleju (sprawność termostatu), trend w czasie **[N+O]**
+- Maksymalne temperatury w trasie i „cool-down” po ostrej jeździe (turbo) – licznik zalecanego czasu na wolnych obrotach przed zgaszeniem **[N+O]**
+- Opony: alarm spadku ciśnienia i asymetrii lewo/prawo, trend (wolny wyciek) **[N+O]**
 
-### 2.4 Diagnostyka
-- Odczyt i kasowanie błędów silnika (mode 03/04), błędy oczekujące (07) i stałe (0A) **[S]**
-- Status lampki MIL i liczba błędów **[S]**
-- Monitory gotowości (przydatne przed przeglądem / po skasowaniu błędów) **[S]**
-- Freeze frame – stan silnika w chwili wystąpienia błędu (mode 02) **[S]**
-- Wyniki testów pokładowych (mode 06: katalizator, sondy, misfire) **[S]**
-- VIN, identyfikatory kalibracji ECU (mode 09) **[S]**
-- Błędy z innych modułów: ABS/VDC, poduszki, BCM, skrzynia, DAS (układ kierowniczy) **[P – UDS 0x19]**
-- Baza opisów kodów (P0xxx generyczne + typowe Nissan/Infiniti P1xxx)
+### 2.4 Osiągi
+- Pomiar 0–100, 60–100, 80–120, 100–200 km/h, 1/4 mili, 100–0 (hamowanie) **[N+O]**
+- Maksymalna moc i moment z przejazdu, wykres moc/moment vs obroty („dyno”) **[N+O]**
+- Shift light w trybie manualnym **[N]**
+- Rekordy i historia pomiarów **[O]**
 
-### 2.5 Stan techniczny i trendy (to odróżnia aplikację od zwykłego skanera)
-- **Akumulator:** napięcie spoczynkowe, spadek przy rozruchu, napięcie ładowania – trend w czasie → ostrzeżenie o słabnącym akumulatorze **[S+O]**
-- **Trymy paliwa w czasie** – rosnący LTFT na jednym banku = nieszczelność / wtryskiwacz **[S+O]**
-- **Czas nagrzewania** silnika do 80–90 °C (termostat) **[S+O]**
-- **Temperatury maksymalne** płynu, oleju, ATF, IAT na trasie **[S/P+O]**
-- **Ciśnienie w oponach** (Q50 ma czujniki TPMS w każdym kole) **[P]** + alarm spadku ciśnienia między pomiarami
-- **Turbo VR30:** historia maksymalnych prędkości turbin i odchyłek doładowania – wczesne wykrycie zużycia turbosprężarki lub nieszczelności **[P+O]**
-- **Intercooler:** trend IAT pod obciążeniem – wykrycie awarii pompy intercoolera **[S/P+O]**
-- **Cewki zapłonowe:** liczniki wypadania zapłonu per cylinder w czasie **[S/P+O]**
-- **Przypomnienia serwisowe** wg km/czasu: olej, filtry, świece, ATF, płyn hamulcowy, przegląd, OC **[R+O]**
+### 2.5 Przejazdy i statystyki
+- Komputer podróży: czas, dystans (z całkowania prędkości), średnia prędkość, czas na postoju **[N+O]**
+- Czas w zakresach obrotów / biegach, udział jazdy dynamicznej **[N+O]**
+- Spalanie i koszty – jeśli znajdzie się sensor zużycia/poziomu paliwa **[?]**
+- Zapis logów CSV na pendrive / pamięć urządzenia (do sprawdzenia, czy zapis na USB działa) → analiza w aplikacji webowej **[N+O]**
 
-### 2.6 Osiągi i jazda
-- Pomiar 0–100, 60–100, 80–120 km/h, 100–0 (hamowanie), 1/4 mili, 402 m **[S+T]**
-- Szacowana moc na kołach z masy, przyspieszenia i oporów **[O]**
-- G-metr (przeciążenia boczne/wzdłużne), wykres „koła przyczepności” **[T]**
-- Wykres doładowania vs obroty, logi „pull” do analizy tuningu **[S+O]**
-- Wskaźnik zmiany biegu (shift light) w trybie manualnym **[S]**
-- Porównanie prędkościomierza z GPS (błąd licznika, np. po zmianie rozmiaru kół) **[S+T]**
-
-### 2.7 Historia i przejazdy
-- Automatyczny zapis przejazdów: trasa GPS, dystans, czas, średnia prędkość, spalanie, koszt
-- Mapa tras kolorowana spalaniem/prędkością
-- Statystyki: czas na biegu jałowym, udział jazdy miejskiej/trasy, ocena płynności jazdy
-- Eksport CSV / JSON (do analizy w Excelu, Pythonie, VirtualDyno itp.)
-
-### 2.8 Alerty (dźwięk + kolor na ekranie)
-- Przegrzanie płynu / oleju / ATF
-- Niskie napięcie lub brak ładowania
-- Pojawienie się nowego kodu błędu
-- Wycofywanie zapłonu (knock) powyżej progu
-- Spadek ciśnienia w oponie
-- Wysoka temperatura za intercoolerem (heat soak)
-- Odchyłka doładowania (zadane vs rzeczywiste) powyżej progu
-- Nadmierne doładowanie / zbyt ubogie AFR pod obciążeniem (tuning)
+### 2.6 Alerty
+Przegrzanie płynu/oleju, niskie ciśnienie oleju, spadek ciśnienia w oponie, wysokie obroty na zimnym oleju, przypomnienie o schłodzeniu turbin.
 
 ---
 
-## 3. Proponowana architektura (TypeScript)
+## 3. Architektura
 
 ```
-┌────────────────────────── UI (React Native) ──────────────────────────┐
-│ Dashboard (konfigurowalne kafelki) · Wykresy · Diagnostyka · Trasy     │
-└───────────────▲───────────────────────────────────────▲────────────────┘
-                │ store (Zustand)                       │ zapytania
-┌───────────────┴──────────────┐          ┌─────────────┴───────────────┐
-│ Scheduler odpytywania        │          │ Baza SQLite (trasy, próbki, │
-│ (priorytety, multi-PID)      │──zapis──▶│ tankowania, serwisy, DTC)   │
-└───────────────▲──────────────┘          └─────────────────────────────┘
-┌───────────────┴──────────────┐
-│ Rejestr PID-ów (typowane     │  definicje: id, tryb, nagłówek ECU,
-│ definicje + dekodery)        │  wzór, jednostka, zakres
-└───────────────▲──────────────┘
-┌───────────────┴──────────────┐
-│ Warstwa protokołu ELM327     │  AT-init, kolejka komend, parsowanie
-│ (+ ISO-TP, UDS)              │  ramek wieloczęściowych, timeouty
-└───────────────▲──────────────┘
-┌───────────────┴──────────────┐
-│ Transport (interfejs)        │  BLE · Bluetooth Classic · Wi-Fi TCP ·
-│                              │  Mock/emulator (do pracy bez auta)
-└──────────────────────────────┘
+┌──────────────────────── Aplikacja InTouch (APK, Java 7, API 10) ───────────────────────┐
+│ UI: własne widoki Canvas, strony przełączane swipem, 800×480, tryb dzień/noc            │
+│   Silnik │ Opony/Podwozie │ Osiągi │ Przejazd │ Zdrowie │ Eksplorator sensorów (dev)   │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│ DataHub: kanały (wartość, jednostka, stan LIVE/STALE/DEMO/UNAVAILABLE), min/max, bufor  │
+│ Silniki: alerty, pomiary osiągów, statystyki przejazdu, logger CSV                      │
+├─────────────────────────────────────────────────────────────────────────────────────────┤
+│ Źródła: SensorSource (SensorManager)  │  DemoSource (syntetyczne)  │  ReplaySource (CSV) │
+└─────────────────────────────────────────────────────────────────────────────────────────┘
+
+┌──────────── Narzędzia (TypeScript / Node) ────────────┐   ┌──── Aplikacja webowa (TS) ────┐
+│ epk-tool: build / inspect pakietów .epk               │   │ Wczytanie logów CSV z auta:   │
+│ symulator: generowanie logów testowych                │   │ wykresy, przejazdy, „dyno”,   │
+│ CI: GitHub Actions → APK + EPK jako artefakt          │   │ trendy ciśnienia oleju itd.   │
+└───────────────────────────────────────────────────────┘   └───────────────────────────────┘
 ```
 
-**Stack (rekomendacja):**
-- **React Native + Expo (dev client / prebuild) + TypeScript**, budowane do **APK** (`eas build --local` lub Gradle) i instalowane z pendrive'a. Natywne moduły (Bluetooth, USB) wykluczają Expo Go.
-- `react-native-bluetooth-classic` (adaptery BT Classic), `react-native-ble-plx` (adaptery BLE), `react-native-usb-serialport-for-android` (adapter OBD na USB).
-- **Wymaganie:** sprawdzić wersję Androida i architekturę CPU radia (często Android 10–13, arm64) i ustawić `minSdkVersion` odpowiednio.
-- Autostart po uruchomieniu radia (`BOOT_COMPLETED`) i automatyczne łączenie z adapterem.
-- `expo-sqlite` (lub `op-sqlite`) – dane; `zustand` – stan; `react-native-skia` / `victory-native` – szybkie wykresy i zegary; `expo-location`, `expo-sensors`, `expo-keep-awake`.
-- Logika OBD jako **czysty pakiet TS bez zależności od RN** (`packages/obd-core`) → testy w Vitest, łatwe podpięcie emulatora.
-
-Alternatywa: natywny Kotlin + Jetpack Compose – lepsza wydajność na słabszych radiach, ale tracimy TypeScript. Zaczynamy od RN; jeśli radio okaże się za słabe do płynnych zegarów 30 fps, warstwę UI można zoptymalizować (Skia).
-
-**Kluczowe decyzje techniczne:**
-- **Przepustowość:** ELM327 przez BLE daje realnie ~10–30 odpowiedzi/s. Rozwiązanie: scheduler z priorytetami (RPM/doładowanie/przepustnica często, temperatury co kilka sekund, poziom paliwa co minutę) + łączenie do 6 PID-ów w jednym zapytaniu mode 01 na CAN.
-- **Inicjalizacja:** `ATZ`, `ATE0`, `ATL0`, `ATS0`, `ATH1`, `ATSP6` (CAN 11-bit 500k), `ATAT1`; przełączanie nagłówków (`ATSH`) do odpytywania innych modułów.
-- **Wykrywanie wsparcia:** bitmapy PID 0x00/0x20/0x40/… → UI pokazuje tylko to, co auto faktycznie obsługuje.
-- **Tylko odczyt:** w pierwszych etapach żadnego zapisu/kodowania modułów. Kasowanie DTC z potwierdzeniem.
+Zasady:
+- Mapa sensorów (typ → nazwa, skala, jednostka) jako **jeden plik konfiguracyjny** – łatwo poprawiać po testach w aucie.
+- Każda wartość ma stan; brak danych = „brak danych”, nigdy fałszywa liczba.
+- Zero zależności zewnętrznych w APK, kompilacja przeciw `android.jar` API 10 (żeby nie użyć nieistniejącego API).
+- Stały klucz podpisu APK w sekretach GitHub (inaczej aktualizacje się nie zainstalują).
 
 ---
 
-## 4. Sprzęt
+## 4. Plan pracy
 
-- **Adapter oparty o STN / dobrej jakości klon:** OBDLink MX+ (BT Classic) lub OBDLink EX (USB) / vLinker FS (USB) / vLinker MC+. Unikać najtańszych klonów ELM327 v1.5/v2.1 – gubią ramki, źle obsługują długie odpowiedzi.
-- **Radio z Androidem** – przed zakupem sprawdzić: wersję Androida, RAM (min. 4 GB), możliwość instalacji APK, zachowanie fabrycznych funkcji (kamera, kierownica, klimatyzacja na dolnym ekranie!).
-- Adapter z **automatycznym usypianiem** (żeby nie rozładował akumulatora na postoju).
-- Telefon z Androidem do developmentu (ten sam APK) przed testami na radiu.
-- Na etap odkrywania PID-ów pomocne: aplikacja Car Scanner ELM (ma profile Nissan/Infiniti) – jako punkt odniesienia do weryfikacji własnych odczytów.
+### Etap 0 – Weryfikacja auta (½ dnia, w samochodzie)
+- [ ] Sprawdzić, że w *APPS* jest **App Garage** i opcja *Install Apps via USB*.
+- [ ] Zainstalować znany pakiet (Twój `gtr.epk` albo appgarage-dash) – potwierdza, że Twoja wersja firmware akceptuje certyfikat OBU.
+- [ ] Zanotować wersję oprogramowania InTouch i rocznik auta.
 
----
+### Etap 1 – Toolchain + „Eksplorator sensorów” (≈1 tydz.)
+- [ ] Struktura repo: `app/` (Java), `tools/` (TS), `web/` (TS), `docs/`.
+- [ ] Skrypt budowania APK (aapt/javac/d8/zipalign/apksigner v1), weryfikacja `minSdk`, braku kodu natywnego, schematu podpisu.
+- [ ] `epk-tool` w TypeScript: `build` i `inspect`; test zgodności struktury z pakietami społeczności.
+- [ ] GitHub Actions: każdy push → artefakt `.apk` + `.epk` do pobrania na pendrive.
+- [ ] **Aplikacja „Eksplorator”:** lista wszystkich sensorów (typ, nazwa, vendor, cała tablica `values[]` na żywo, częstotliwość), zapis do CSV.
+- [ ] Test wydajności: Canvas (Java) vs WebView + TS – decyzja o technologii UI.
+- [ ] Sprawdzić, gdzie aplikacja może zapisywać pliki (pendrive? pamięć wewnętrzna?).
 
-## 5. Plan pracy (etapy)
+### Etap 2 – Mapowanie sygnałów (1–2 tyg., w aucie)
+- [ ] Przejazdy testowe z logowaniem; korelacja niezmapowanych sensorów z akcjami: tankowanie (poziom paliwa), skręt kierownicą, hamowanie, włączenie świateł, rozgrzewanie skrzyni.
+- [ ] Potwierdzenie skal (porównanie z zegarami i komputerem pokładowym).
+- [ ] Wynik: `docs/sensor-map.md` + plik konfiguracyjny mapy.
 
-### Etap 0 – Rozpoznanie (½–1 dzień)
-- [ ] Ustalić model radia: fabryczny InTouch czy zamienne z Androidem (wersja Androida, CPU, rozdzielczość ekranu, orientacja).
-- [ ] Sprawdzić instalację testowego APK z pendrive'a na radiu.
-- [ ] Kupić adapter OBD (USB lub BT).
-- [ ] Zrobić „zrzut” auta istniejącą aplikacją: lista wspieranych PID-ów, VIN, lista modułów odpowiadających na CAN.
+### Etap 3 – Dashboard MVP (1–2 tyg.)
+- [ ] Strony: **Silnik** (obroty, moc, moment, temp./ciśnienie oleju, płyn), **Podwozie** (opony, G-metr, bieg), **Przejazd**.
+- [ ] Jednostki metryczne domyślnie, motyw nocny, duże czcionki, obsługa jednym dotknięciem.
+- [ ] DemoSource do testów bez auta.
 
-### Etap 1 – Fundament (1–2 tyg.)
-- [ ] Monorepo: `apps/mobile` (Expo) + `packages/obd-core` (czysty TS), ESLint, Prettier, Vitest, CI na GitHub Actions.
-- [ ] Interfejs `Transport` + implementacje: `MockTransport` (nagrane odpowiedzi), `BluetoothClassicTransport`, `UsbSerialTransport`, później `BleTransport`.
-- [ ] Pipeline budowania APK (GitHub Actions → artefakt do pobrania i wgrania na pendrive).
-- [ ] Warstwa ELM327: kolejka komend, init, parser odpowiedzi (w tym wieloramkowe ISO-TP), obsługa `NO DATA`, `STOPPED`, `CAN ERROR`, timeoutów, reconnectu.
-- [ ] Rejestr standardowych PID-ów mode 01 z dekoderami + testy jednostkowe na znanych ramkach.
-- [ ] Emulator do developmentu (np. `ELM327-emulator` przez TCP) – praca bez auta.
+### Etap 4 – Zdrowie, alerty, osiągi, logi (2 tyg.)
+- [ ] Alerty z progami i histerezą.
+- [ ] Wzorzec ciśnienia oleju, rozgrzewanie, cool-down turbo.
+- [ ] Pomiary 0–100 itd., rekordy, „dyno” z sensorów momentu/mocy.
+- [ ] Logger CSV przejazdów.
 
-### Etap 2 – MVP: dashboard + diagnostyka (1–2 tyg.)
-- [ ] Ekran połączenia (wybór adaptera BT/USB, zapamiętanie, autołączenie, autostart z radiem).
-- [ ] Dashboard na żywo: konfigurowalne kafelki (wartość, zegar, mini-wykres), układ dopasowany do rozdzielczości radia, ciemny motyw nocny, duże czcionki.
-- [ ] Domyślny ekran „VR30”: doładowanie, IAT, temp. płynu/oleju, AFR, timing, napięcie.
-- [ ] Diagnostyka: VIN, MIL, odczyt/kasowanie DTC, oczekujące/stałe DTC, monitory gotowości, freeze frame, baza opisów kodów.
-- [ ] Spalanie chwilowe i średnie z bieżącej sesji.
-- [ ] **Pierwszy test w aucie.**
+### Etap 5 – Dane spoza CAN radia (badawczy, opcjonalny)
+- [ ] Zbadać, czy wśród sensorów da się wyliczyć doładowanie (jak „AUTO FIND” w Red Sport).
+- [ ] Sprawdzić, czy aplikacje w Androidzie InTouch mają dostęp do Bluetooth (adapter OBD) – jeśli tak: doładowanie, AFR, trymy, temp. ATF przez OBD.
+- [ ] Alternatywa: telefon z adapterem OBD jako uzupełnienie.
 
-### Etap 3 – Zapis i historia (1–2 tyg.)
-- [ ] Schemat SQLite: `trips`, `samples` (kompresja/decymacja), `fuel_ups`, `service_items`, `dtc_history`.
-- [ ] Automatyczny start/stop przejazdu (połączenie z adapterem + RPM > 0), GPS.
-- [ ] Ekran przejazdów: mapa, wykresy w czasie, statystyki, koszt.
-- [ ] Tankowania, kalibracja spalania, zasięg.
-- [ ] Eksport CSV.
-
-### Etap 4 – PID-y producenta (2–4 tyg., najbardziej badawczy)
-- [ ] Narzędzie „skaner DID” w trybie deweloperskim: odpytanie zakresów mode 21/22 na kolejnych adresach modułów, zapis surowych odpowiedzi.
-- [ ] Identyfikacja wartości przez korelację (np. ATF rośnie razem z czasem jazdy; ciśnienie opon po dopompowaniu; bieg zmienia się z ilorazem RPM/prędkość).
-- [ ] Priorytety dla VR30: temp. ATF → bieg → knock per cylinder → prędkości turbin → doładowanie zadane → temp. oleju → IAT za intercoolerem → TPMS.
-- [ ] Punkt odniesienia do weryfikacji: aplikacje z profilami Nissan/Infiniti (np. Car Scanner) oraz społeczność tuningowa VR30 (logi z narzędzi typu Ecutek).
-- [ ] Odczyt DTC z innych modułów (UDS 0x19).
-- [ ] Definicje PID-ów producenta jako plik danych (JSON) per wariant silnika – łatwe rozszerzanie.
-
-### Etap 5 – Zdrowie, alerty, osiągi (1–2 tyg.)
-- [ ] Silnik reguł alertów (progi, histereza, konfigurowalne).
-- [ ] Trendy: akumulator, LTFT, czas nagrzewania, temperatury maksymalne.
-- [ ] Przypomnienia serwisowe (lokalne powiadomienia).
-- [ ] Pomiary osiągów (0–100, 100–200 itd.) z fuzją danych OBD + GPS (+ akcelerometr, jeśli radio ma), G-metr.
-
-### Etap 6 – Dopracowanie (ciągłe)
-- [ ] Działanie w tle (foreground service) – logowanie trwa, gdy na radiu włączona jest nawigacja/muzyka.
-- [ ] Pływające okno / widżet z kluczowymi wartościami nad innymi aplikacjami.
-- [ ] Wersja na telefon (ten sam APK) i ewentualnie Android Auto dla wariantu z modułem retrofit.
-- [ ] Opcjonalnie backup/synchronizacja w chmurze, panel webowy z historią.
+### Etap 6 – Aplikacja webowa do analizy logów (TS)
+- [ ] Wczytanie CSV z pendrive'a, wykresy przejazdów, porównanie pomiarów, trendy zdrowia silnika.
 
 ---
 
-## 6. Ryzyka
+## 5. Ryzyka
 
 | Ryzyko | Mitygacja |
 |---|---|
-| PID-y producenta nieznane / różne dla wersji | Etap 4 jako osobny, badawczy; aplikacja w pełni użyteczna na samych standardowych PID-ach |
-| Słaby adapter → zgubione ramki, niska częstotliwość | Adapter STN/OBDLink, scheduler z priorytetami, multi-PID |
-| Fabryczny InTouch nie pozwala na własne aplikacje | Docelowo radio z Androidem; do tego czasu aplikacja działa na telefonie/tablecie |
-| Słabe CPU / stary Android w tanich radiach | Ustalić specyfikację radia na etapie 0, testować wydajność UI wcześnie |
-| Radio agresywnie ubija aplikacje w tle | Foreground service, wyłączenie optymalizacji baterii, autostart |
-| Rozpraszanie kierowcy | Minimalna interakcja w trakcie jazdy, duże elementy, alerty dźwiękowe |
-| Rozładowanie akumulatora przez adapter | Adapter z auto-sleep, wykrywanie wyłączenia zapłonu |
-| Kasowanie DTC / zapytania do modułów bezpieczeństwa | Tylko odczyt, potwierdzenia, brak zapisu do modułów |
+| Inna wersja firmware InTouch → inny certyfikat OBU lub mapa sensorów | Etap 0 (test znanego pakietu), mapa sensorów jako konfiguracja |
+| Uszkodzenie/niestabilność radia | Tylko oficjalna ścieżka App Garage, bez modyfikacji firmware; prosta, mała aplikacja |
+| Brak doładowania/AFR/knock na CAN radia | Jasno oznaczone jako niedostępne; etap 5 badawczy |
+| Android 2.3 – stare API, słaby WebView | Java + Canvas, kompilacja przeciw API 10, test wydajności wcześnie |
+| Rozpraszanie kierowcy (aplikacja aktywna w czasie jazdy) | Czytelne, statyczne układy, alerty dźwiękowe zamiast patrzenia na ekran |
+| Utrata klucza podpisu → brak aktualizacji | Klucz w sekretach GitHub + kopia zapasowa |
 
 ---
 
-## 7. Otwarte pytania
+## 6. Otwarte pytania
 
-1. **Jakie masz radio?** Fabryczny InTouch (dwa ekrany) czy już wymienione na Androida (model, wersja Androida)?
-2. Jeśli fabryczne: skąd informacja o instalacji przez USB? Konkretna instrukcja / nazwa opcji w menu pomoże sprawdzić, czy da się tam wgrać własny kod.
-3. Rocznik auta i czy wersja Red Sport 400 (405 KM)? Czy silnik jest tuningowany (inne progi alertów, doładowanie > 255 kPa)?
-4. Masz już adapter OBD? Jaki?
-5. Priorytet: monitoring silnika/turbo, koszty i trasy, czy osiągi?
+1. **Rocznik auta i wersja oprogramowania InTouch?** (App Garage musi być w menu APPS)
+2. **Czy `gtr.epk` instaluje się i działa w Twoim aucie?** Skąd pochodzi (to nie jest aplikacja z repozytoriów wyżej – ma ~2 MB)?
+3. **Język aplikacji w aucie:** Java (sprawdzona ścieżka, płynne zegary) czy próba z TypeScript w WebView (po teście wydajności)? Narzędzia i aplikacja do analizy logów i tak będą w TS.
+4. Czy silnik jest tuningowany (EcuTek)? To otwiera inne źródła danych o doładowaniu i spalaniu stukowym.
