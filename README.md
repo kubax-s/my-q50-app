@@ -8,7 +8,7 @@ Plan and analysis: [`docs/PLAN.md`](docs/PLAN.md).
 
 | Tab | What it shows |
 |---|---|
-| **PRZEGLĄD** (overview) | Big tiles: RPM, speed, gear, throttle, coolant and oil temperature, oil pressure, torque, power, G-forces, all 4 tyres, with max values. Tiles can be hidden in settings; the grid re-flows |
+| **PRZEGLĄD** (overview) | Big tiles: RPM, speed, gear, throttle, coolant and oil temperature, oil pressure, torque, power, G-forces, all 4 tyres – live values only. Tiles can be hidden in settings; the grid re-flows |
 | **ALERTY** (alerts) | State of every alert (tap an active one to snooze/unsnooze), recent alert history, tyre pressures vs. the average and slow-leak check |
 | **SILNIK** (engine) | Warm-up state and times, turbo cool-down timer, oil pressure vs. a baseline learned per 500 rpm, "dyno" power/torque curve from full-throttle pulls |
 | **TRASA** (trip) | Trip computer (time, driving/idle, distance, average/max speed, max RPM/power/torque/temperatures, spirited share); automatic 0–100, 1/4 mile, 60–100, 80–120, 100–200 km/h and 100–0 braking with last/best; time in RPM bands and in each gear |

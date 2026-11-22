@@ -41,14 +41,6 @@ public final class Channel {
     private float rangeMin = Float.NaN;
     private float rangeMax = Float.NaN;
     private String rangeCache = "";
-    private float maxKey = Float.NaN;
-    private String maxCache = "—";
-    private float minKey = Float.NaN;
-    private String minCache = "—";
-    private float exMin = Float.NaN;
-    private float exMax = Float.NaN;
-    private boolean exWithMin;
-    private String exCache = "";
 
     public Channel(int type, String name, String vendor, boolean vehicle, boolean demo,
                    float maxRange, float resolution) {
@@ -139,34 +131,8 @@ public final class Channel {
         return rangeCache;
     }
 
-    /** Maximum, converted and formatted with the signal definition; cached. */
-    public String maxText() {
-        if (Float.compare(max, maxKey) != 0) {
-            maxKey = max;
-            maxCache = Float.isNaN(max) ? "—" : def == null ? Fmt.raw(max) : def.formatRaw(max);
-        }
-        return maxCache;
-    }
 
-    /** "max X" or "min Y  max X" caption, cached until the extremes change. */
-    public String extremesText(boolean withMin) {
-        if (Float.compare(min, exMin) != 0 || Float.compare(max, exMax) != 0 || withMin != exWithMin || exCache.length() == 0) {
-            exMin = min;
-            exMax = max;
-            exWithMin = withMin;
-            exCache = withMin ? "min " + minText() + "  max " + maxText() : "max " + maxText();
-        }
-        return exCache;
-    }
 
-    /** Minimum, converted and formatted with the signal definition; cached. */
-    public String minText() {
-        if (Float.compare(min, minKey) != 0) {
-            minKey = min;
-            minCache = Float.isNaN(min) ? "—" : def == null ? Fmt.raw(min) : def.formatRaw(min);
-        }
-        return minCache;
-    }
 
     public void resetMinMax() {
         min = Float.NaN;

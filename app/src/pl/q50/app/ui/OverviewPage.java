@@ -110,10 +110,6 @@ final class OverviewPage implements Page {
         }
         c.drawText(ch.formatted(), (l + r) / 2, (t + b) / 2 + th.px(size * 0.37f), th.bold(size, color, Paint.Align.CENTER));
         c.drawText(d.unit(), r - th.px(10), b - th.px(10), th.text(14, Theme.DIM, Paint.Align.RIGHT));
-        if (!"gear".equals(d.format)) {
-            c.drawText(ch.extremesText(d.key.startsWith("g_")), l + th.px(10), b - th.px(10),
-                    th.text(12, Theme.DIM, Paint.Align.LEFT));
-        }
     }
 
     private void drawTyres(Canvas c, Theme th, float l, float t, float r, float b, float size) {
