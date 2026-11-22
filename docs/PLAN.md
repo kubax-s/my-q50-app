@@ -10,7 +10,7 @@ Aplikacja (TypeScript, Android) instalowana na systemie multimedialnym Infiniti 
 |---|---|---|
 | **Port OBD-II + adapter ELM327 / STN** | Wszystko, co silnik i inne moduły udostępniają po CAN | Główne źródło. Q50 komunikuje się po ISO 15765-4 (CAN 11-bit, 500 kbit/s). |
 | Standardowe PID-y (SAE J1979, mode 01/02/03/04/06/07/09/0A) | Obroty, prędkość, temperatury, ciśnienia, trymy paliwa, lambda, błędy, VIN | Działają na każdym aucie, gwarantowane – ale tylko dane „emisyjne” z ECM. |
-| Rozszerzone PID-y producenta (mode 21/22, UDS) | Temp. ATF, aktualny bieg, ciśnienia w oponach, temp. oleju, dane hybrydy/DPF, błędy z ABS/SRS/BCM | Nieudokumentowane publicznie – trzeba je **odkryć i zweryfikować na Twoim aucie** (etap 4). |
+| Rozszerzone PID-y producenta (mode 21/22, UDS) | Temp. ATF, aktualny bieg, ciśnienia w oponach, temp. oleju, prędkości turbin, knock, błędy z ABS/SRS/BCM | Nieudokumentowane publicznie – trzeba je **odkryć i zweryfikować na Twoim aucie** (etap 4). |
 | Radio/urządzenie z Androidem (GPS, ew. akcelerometr) | Prędkość GPS, trasa, przeciążenia | Radia z Androidem mają GPS; akcelerometr nie zawsze – przy jego braku G-metr liczony z OBD/GPS. |
 | Ręcznie wpisywane dane | Tankowania, ceny paliwa, serwisy, koszty | Do historii i statystyk kosztów. |
 
