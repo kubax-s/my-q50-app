@@ -161,6 +161,10 @@ public final class Strings {
 
     // settings
     public final String tilesTitle;
+    public final String[] settingsSections;
+    public final String themeTitle;
+    public final String accentTitle;
+    public final String[] themeNames;
     public final String alertsTitle;
     public final String alertSound;
     public final String language;
@@ -316,6 +320,10 @@ public final class Strings {
         resetTrip = en ? "RESET TRIP" : "RESET PRZEJAZDU";
 
         tilesTitle = en ? "SHOWN ON OVERVIEW" : "WIDOCZNE NA PRZEGLĄDZIE";
+        settingsSections = en ? new String[]{"GENERAL", "TILES", "ALERTS"} : new String[]{"OGÓLNE", "KAFELKI", "ALERTY"};
+        themeTitle = en ? "THEME" : "MOTYW";
+        accentTitle = en ? "ACCENT COLOUR" : "KOLOR AKCENTU";
+        themeNames = en ? new String[]{"DARK", "BLACK", "GRAPHITE", "LIGHT"} : new String[]{"CIEMNY", "CZARNY", "GRAFIT", "JASNY"};
         alertsTitle = en ? "ALERTS" : "ALERTY";
         alertSound = en ? "Alert sound" : "Dźwięk alertów";
 

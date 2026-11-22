@@ -35,7 +35,7 @@ final class AlertsPage implements Page {
     }
 
     static int severityColor(int severity) {
-        return severity == AlertEngine.CRITICAL ? Theme.HOT : severity == AlertEngine.WARNING ? Theme.ACCENT : 0xFF4F8FD0;
+        return severity == AlertEngine.CRITICAL ? Theme.HOT : severity == AlertEngine.WARNING ? Theme.WARN : 0xFF4F8FD0;
     }
 
     public void draw(Canvas c, RectF a, Theme th, long now) {

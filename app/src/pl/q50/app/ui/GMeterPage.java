@@ -77,9 +77,9 @@ final class GMeterPage implements Page {
             if (g.sectorMax[s] > 0) any = true;
         }
         if (any) {
-            th.fill.setColor(0x33FF8A00);
+            th.fill.setColor(Theme.alpha(Theme.ACCENT, 0x33));
             c.drawPath(path, th.fill);
-            th.stroke.setColor(0x99FF8A00);
+            th.stroke.setColor(Theme.alpha(Theme.ACCENT, 0x99));
             th.stroke.setStrokeWidth(th.px(1.5f));
             c.drawPath(path, th.stroke);
         }
@@ -90,7 +90,7 @@ final class GMeterPage implements Page {
             float x = cx + clamp(g.trailLat(i)) * perG;
             float y = cy - clamp(g.trailLon(i)) * perG;
             int alpha = 40 + 160 * i / Math.max(1, n);
-            th.fill.setColor((alpha << 24) | 0x00E8EAED);
+            th.fill.setColor(Theme.alpha(Theme.TEXT, alpha));
             c.drawCircle(x, y, th.px(2.5f), th.fill);
         }
         if (!Float.isNaN(g.lat) && !Float.isNaN(g.lon)) {

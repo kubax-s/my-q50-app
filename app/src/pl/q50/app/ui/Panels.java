@@ -54,7 +54,7 @@ public final class Panels {
         Snapshot s = an.last;
         WarmUp w = an.warmUp;
         int state = w.state();
-        int color = state == WarmUp.COLD ? Theme.COLD : state == WarmUp.WARMING ? Theme.ACCENT : Theme.OK;
+        int color = state == WarmUp.COLD ? Theme.COLD : state == WarmUp.WARMING ? Theme.WARN : Theme.OK;
         String oil = s == null || Float.isNaN(s.oilTemp) ? "—" : Fmt.number(s.oilTemp, 0) + " °C";
         Paint op = th.bold(36, state == WarmUp.UNKNOWN ? Theme.LINE : color, Paint.Align.LEFT);
         c.drawText(oil, l + th.px(12), t + th.px(64), op);
@@ -108,7 +108,7 @@ public final class Panels {
         }
         c.drawText(Theme.fit(k, line, x1 - x0), x0, t + th.px(112), k);
         if (tc.oilSlowsCooling()) {
-            Paint op = th.text(13, Theme.ACCENT, Paint.Align.LEFT);
+            Paint op = th.text(13, Theme.WARN, Paint.Align.LEFT);
             c.drawText(Theme.fit(op, tr.turboHotOil(Fmt.number(tc.oilTemp(), 0)), x1 - x0), x0, t + th.px(132), op);
         }
     }
@@ -131,7 +131,7 @@ public final class Panels {
             return;
         }
         zone(c, th, x0, xRed, top, bottom, Theme.HOT, xNow);
-        zone(c, th, xRed, xOrange, top, bottom, Theme.ACCENT, xNow);
+        zone(c, th, xRed, xOrange, top, bottom, Theme.WARN, xNow);
         zone(c, th, xOrange, x1, top, bottom, Theme.OK, xNow);
         // "now" marker
         th.fill.setColor(Theme.TEXT);
@@ -184,7 +184,7 @@ public final class Panels {
             boolean trusted = m.count[i] >= OilPressureMonitor.MIN_SAMPLES;
             if (trusted) learned++;
             float y = cb - (cb - ct) * (m.mean[i] / maxBar);
-            th.fill.setColor(trusted ? 0xFF3A4452 : 0xFF262C35);
+            th.fill.setColor(trusted ? Theme.alpha(Theme.DIM, 0x66) : Theme.LINE);
             c.drawRect(cl + i * binW + th.px(1), y, cl + (i + 1) * binW - th.px(1), cb, th.fill);
         }
         Paint ax = th.text(10, Theme.DIM, Paint.Align.CENTER);
@@ -231,7 +231,7 @@ public final class Panels {
         String leak = tm.leakTyre >= 0
                 ? tr.alertTyreLeak(tr.tyreShort[tm.leakTyre], Fmt.number(tm.leakDropBar, 2), tm.leakDays)
                 : tr.noLeak + " · " + tr.tyreSessions(tm.history().size());
-        Paint k = th.text(12, tm.leakTyre >= 0 ? Theme.ACCENT : Theme.DIM, Paint.Align.LEFT);
+        Paint k = th.text(12, tm.leakTyre >= 0 ? Theme.WARN : Theme.DIM, Paint.Align.LEFT);
         c.drawText(Theme.fit(k, leak, r - l - th.px(24)), l + th.px(12), b - th.px(9), k);
     }
 

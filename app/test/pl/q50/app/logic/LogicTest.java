@@ -264,6 +264,15 @@ public final class LogicTest {
         check(!b.isAlertEnabled(AlertEngine.TURBO_COOLDOWN) && b.isAlertEnabled(AlertEngine.OIL_HOT), "alerts persisted");
         check(b.sound(), "sound persisted");
         check(b.visibleTileCount() == Settings.TILES.length - 1, "visible count");
+        a.theme = 3;
+        a.accent = 5;
+        a.save(store);
+        Settings c = new Settings();
+        c.load(store);
+        check(c.theme == 3 && c.accent == 5, "theme and accent persisted");
+        store.put("settings_theme", "garbage");
+        c.load(store);
+        check(c.theme == 0, "invalid theme falls back to default");
     }
 
     static void warmUp() {

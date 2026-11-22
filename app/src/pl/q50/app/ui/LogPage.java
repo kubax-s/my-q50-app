@@ -96,9 +96,9 @@ final class LogPage implements Page {
         float colW = th.px(300);
         startBtn.set(a.left, a.top, a.left + colW, a.top + th.px(110));
         markerBtn.set(a.left, startBtn.bottom + th.px(10), a.left + colW, startBtn.bottom + th.px(120));
-        th.button(c, startBtn, on ? t.stop : t.start, on ? Theme.HOT : Theme.OK, Theme.BG, 30);
+        th.button(c, startBtn, on ? t.stop : t.start, on ? Theme.HOT : Theme.OK, on ? Theme.ON_HOT : Theme.ON_COLOR, 30);
         th.button(c, markerBtn, t.marker + (on ? "  #" + (logger.markers() + 1) : ""),
-                on ? Theme.ACCENT : Theme.PANEL, on ? Theme.BG : Theme.DIM, 26);
+                on ? Theme.ACCENT : Theme.PANEL, on ? Theme.ON_COLOR : Theme.DIM, 26);
         Paint hint = th.text(13, Theme.DIM, Paint.Align.LEFT);
         float hy = markerBtn.bottom + th.px(24);
         String key = t.code + (int) colW;
@@ -169,11 +169,11 @@ final class LogPage implements Page {
                 kc = Theme.DIM;
             } else if (o.ram) {
                 kind = "RAM";
-                kc = Theme.ACCENT;
+                kc = Theme.WARN;
             } else {
                 kind = (o.flash ? t.usbStorage : t.writable)
                         + (o.freeBytes >= 0 ? " · " + Fmt.bytes(o.freeBytes) + " " + t.freeSuffix : "");
-                kc = o.recommended() ? Theme.OK : Theme.ACCENT;
+                kc = o.recommended() ? Theme.OK : Theme.WARN;
             }
             c.drawText(kind, r.right - th.px(10), r.centerY() + th.px(5), th.text(13, kc, Paint.Align.RIGHT));
             oy += rowH;

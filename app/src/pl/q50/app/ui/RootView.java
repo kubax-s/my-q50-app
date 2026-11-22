@@ -160,7 +160,7 @@ public final class RootView extends View {
             drawTabs(c, now, t); // the REC timer blinks: draw directly
         } else {
             // static while idle: render once into a bitmap, then just copy it each frame
-            int key = (current * 31 + (t.en ? 1 : 0)) * 31 + getWidth();
+            int key = ((current * 31 + (t.en ? 1 : 0)) * 31 + getWidth()) * 31 + Theme.version;
             if (tabCache == null || key != tabKey || tabCache.getWidth() != getWidth()) {
                 if (tabCache == null || tabCache.getWidth() != getWidth()) {
                     if (tabCache != null) tabCache.recycle();
@@ -188,7 +188,7 @@ public final class RootView extends View {
         if (message != null && now < messageUntil) {
             float h = th.px(40);
             float b = area.bottom - th.px(8);
-            th.panel(c, th.px(80), b - h, getWidth() - th.px(80), b, 0xEE303844);
+            th.panel(c, th.px(80), b - h, getWidth() - th.px(80), b, Theme.alpha(Theme.PANEL_HI, 0xEE));
             c.drawText(message, getWidth() / 2f, b - h / 2 + th.px(6), th.bold(16, Theme.TEXT, Paint.Align.CENTER));
         }
     }
@@ -239,16 +239,16 @@ public final class RootView extends View {
         if (AlertEngine.TURBO_COOLDOWN.equals(a.id)) {
             int level = analytics.turbo.level();
             bg = Theme.turboColor(level);
-            fg = level >= 2 ? Theme.TEXT : Theme.BG;
+            fg = level >= 2 ? Theme.ON_HOT : Theme.ON_COLOR;
         } else if (a.severity == AlertEngine.CRITICAL) {
             bg = Theme.HOT;
-            fg = Theme.TEXT;
+            fg = Theme.ON_HOT;
         } else if (a.severity == AlertEngine.WARNING) {
-            bg = Theme.ACCENT;
-            fg = Theme.BG;
+            bg = Theme.WARN;
+            fg = Theme.ON_COLOR;
         } else {
             bg = 0xFF2B5C8A;
-            fg = Theme.TEXT;
+            fg = Theme.ON_HOT;
         }
         banner.set(th.px(MARGIN), getHeight() - th.px(MARGIN + BANNER_H), getWidth() - th.px(MARGIN),
                 getHeight() - th.px(MARGIN));

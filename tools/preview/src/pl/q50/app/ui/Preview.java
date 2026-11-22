@@ -299,6 +299,47 @@ public final class Preview {
         ImageIO.write(strip, "png", new File("build/preview/pl/turbo-levels.png"));
     }
 
+    /** Overview and engine tabs in every theme, each with a different accent: build/preview/pl/themes.png. */
+    private void themes(AppHost host) throws IOException {
+        Strings.setLanguage(Strings.PL);
+        int[][] combos = {{Theme.THEME_DARK, 0}, {Theme.THEME_BLACK, 5}, {Theme.THEME_GRAPHITE, 4}, {Theme.THEME_LIGHT, 1}};
+        String[] titles = {"Ciemny + pomarańczowy", "Czarny + niebieski", "Grafit + turkusowy", "Jasny + czerwony"};
+        File dir = new File("build/preview/pl");
+        File[] files = new File[combos.length * 2];
+        String[] labels = new String[combos.length * 2];
+        for (int i = 0; i < combos.length; i++) {
+            analytics.settings.theme = combos[i][0];
+            analytics.settings.accent = combos[i][1];
+            Theme.apply(combos[i][0], combos[i][1]);
+            RootView root = new RootView(new Context(), hub, logger, analytics, host);
+            root.setPreviewSize(W, H);
+            files[i * 2] = new File(dir, "theme-" + i + "-overview.png");
+            render(root, 0, files[i * 2]);
+            labels[i * 2] = titles[i] + " – przegląd";
+            files[i * 2 + 1] = new File(dir, "theme-" + i + "-settings.png");
+            render(root, 7, files[i * 2 + 1]);
+            labels[i * 2 + 1] = titles[i] + " – ustawienia";
+        }
+        contactSheet(files, labels, new File(dir, "themes.png"));
+        // settings sections, opened with simulated taps on the section switcher
+        Theme.apply(Theme.THEME_DARK, 0);
+        RootView root = new RootView(new Context(), hub, logger, analytics, host);
+        root.setPreviewSize(W, H);
+        String[] sectionNames = {"general", "tiles", "alerts"};
+        for (int i = 0; i < 3; i++) {
+            render(root, 7, new File(dir, "settings-" + sectionNames[i] + ".png"));
+            float x = (10 + (i + 1) * 156 + 75) * 2f;
+            float y = (60 + 19) * 2f;
+            if (i < 2) {
+                root.onTouchEvent(new android.view.MotionEvent(android.view.MotionEvent.ACTION_DOWN, x, y));
+                root.onTouchEvent(new android.view.MotionEvent(android.view.MotionEvent.ACTION_UP, x, y));
+            }
+        }
+        analytics.settings.theme = 0;
+        analytics.settings.accent = 0;
+        Theme.apply(Theme.THEME_DARK, 0);
+    }
+
     /** Average draw time and bytes allocated per frame for every tab (--bench). */
     private void bench(AppHost host) {
         com.sun.management.ThreadMXBean mx = (com.sun.management.ThreadMXBean) java.lang.management.ManagementFactory.getThreadMXBean();
@@ -377,7 +418,7 @@ public final class Preview {
             }
 
             public String versionText() {
-                return "0.5.1 (preview)";
+                return "0.6.0 (preview)";
             }
 
             public int vehicleSensorCount() {
@@ -433,7 +474,7 @@ public final class Preview {
             }
 
             public String versionText() {
-                return "0.5.1 (preview)";
+                return "0.6.0 (preview)";
             }
 
             public int vehicleSensorCount() {
@@ -464,6 +505,7 @@ public final class Preview {
             contactSheet(files, titles, new File(dir, "all.png"));
         }
         p.turboLevels(host);
+        p.themes(host);
         System.out.println("Rendered previews to build/preview/{pl,en} (simulated " + p.t / 1000 + " s of driving)");
     }
 }

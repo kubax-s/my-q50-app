@@ -15,10 +15,15 @@ public final class Settings {
     private static final String KEY_HIDDEN = "settings_hidden_tiles";
     private static final String KEY_ALERTS_OFF = "settings_alerts_off";
     private static final String KEY_SOUND = "settings_alert_sound";
+    private static final String KEY_THEME = "settings_theme";
+    private static final String KEY_ACCENT = "settings_accent";
 
     private final Set<String> hiddenTiles = new HashSet<String>();
     private final Set<String> disabledAlerts = new HashSet<String>();
     private boolean sound;
+    /** Colour theme index (0 = dark) and accent index (0 = orange); validated by the UI. */
+    public int theme;
+    public int accent;
 
     public boolean isTileVisible(String key) {
         return !hiddenTiles.contains(key);
@@ -62,12 +67,25 @@ public final class Settings {
         split(store.get(KEY_HIDDEN), hiddenTiles);
         split(store.get(KEY_ALERTS_OFF), disabledAlerts);
         sound = "1".equals(store.get(KEY_SOUND));
+        theme = parseInt(store.get(KEY_THEME));
+        accent = parseInt(store.get(KEY_ACCENT));
     }
 
     public void save(Store store) {
         store.put(KEY_HIDDEN, join(hiddenTiles));
         store.put(KEY_ALERTS_OFF, join(disabledAlerts));
         store.put(KEY_SOUND, sound ? "1" : "0");
+        store.put(KEY_THEME, Integer.toString(theme));
+        store.put(KEY_ACCENT, Integer.toString(accent));
+    }
+
+    private static int parseInt(String s) {
+        if (s == null) return 0;
+        try {
+            return Integer.parseInt(s);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     private static void split(String csv, Set<String> out) {

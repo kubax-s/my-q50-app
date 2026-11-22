@@ -28,6 +28,7 @@ import pl.q50.app.logic.Store;
 import pl.q50.app.ui.AppHost;
 import pl.q50.app.ui.Panels;
 import pl.q50.app.ui.RootView;
+import pl.q50.app.ui.Theme;
 
 /**
  * My Q50 – reads the vehicle signals InTouch exposes as Android sensors.
@@ -154,6 +155,7 @@ public final class MainActivity extends Activity {
         store = new PrefsStore();
         settings = new Settings();
         settings.load(store);
+        Theme.apply(settings.theme, settings.accent);
         analytics = new Analytics(settings);
         analytics.load(store);
         hub = new DataHub(SensorMap.load(getAssets()));
