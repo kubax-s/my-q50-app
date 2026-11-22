@@ -53,12 +53,6 @@ public final class MakeIcon {
         float tw = (float) f.getStringBounds(text, g.getFontRenderContext()).getWidth();
         g.setPaint(new GradientPaint(0, cy - 12 * s, new Color(0xFFFFFF), 0, cy + 10 * s, new Color(0xB8BEC6)));
         g.drawString(text, cx - tw / 2, cy + 9 * s);
-        // small "MY" under it
-        Font f2 = new Font("DejaVu Sans", Font.BOLD, Math.round(9 * s));
-        g.setFont(f2);
-        float mw = (float) f2.getStringBounds("MY", g.getFontRenderContext()).getWidth();
-        g.setColor(new Color(0xFF8A00));
-        g.drawString("MY", cx - mw / 2, cy + 26 * s);
         g.dispose();
         ImageIO.write(img, "png", new File(args[1]));
     }
