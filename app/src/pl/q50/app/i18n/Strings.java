@@ -74,10 +74,34 @@ public final class Strings {
     public final String cannotCreateDir;
     public final String writeError;
 
-    // new tabs
-    public final String tabHealth;
-    public final String tabPerformance;
+    // tabs added in 0.3/0.4
+    public final String tabAlerts;
+    public final String tabEngine;
     public final String tabTrip;
+    public final String tabGMeter;
+
+    // alerts page
+    public final String alertOff;
+    public final String alertDisabled;
+    public final String historyTitle;
+    public final String historyEmpty;
+    public final String tapToSnooze;
+    public final String enableInSettings;
+
+    // g-meter
+    public final String gLateral;
+    public final String gLongitudinal;
+    public final String gMaxLatPlus;
+    public final String gMaxLatMinus;
+    public final String gMaxAccel;
+    public final String gMaxBrake;
+    public final String gMaxCombined;
+    public final String gAccelShort;
+    public final String gBrakeShort;
+    public final String gSignNote;
+    public final String resetG;
+    public final String gNoData;
+    public final String perfTitle;
 
     // alerts
     public final String[] alertNames; // same order as AlertEngine.IDS
@@ -202,9 +226,32 @@ public final class Strings {
         cannotCreateDir = en ? "Cannot create folder " : "Nie można utworzyć katalogu ";
         writeError = en ? "Write error: " : "Błąd zapisu: ";
 
-        tabHealth = en ? "HEALTH" : "ZDROWIE";
-        tabPerformance = en ? "PERFORMANCE" : "OSIĄGI";
-        tabTrip = en ? "TRIP" : "PRZEJAZD";
+        tabAlerts = en ? "ALERTS" : "ALERTY";
+        tabEngine = en ? "ENGINE" : "SILNIK";
+        tabTrip = en ? "TRIP" : "TRASA";
+        tabGMeter = en ? "G-METER" : "G-METR";
+
+        alertOff = "OK";
+        alertDisabled = en ? "disabled" : "wyłączony";
+        historyTitle = en ? "RECENT ALERTS" : "OSTATNIE ALERTY";
+        historyEmpty = en ? "No alerts this session" : "Brak alertów w tej sesji";
+        tapToSnooze = en ? "Tap an active alert to snooze it for 5 min (tap again to undo)"
+                : "Dotknij aktywnego alertu, aby wyciszyć go na 5 min (ponownie – cofnij)";
+        enableInSettings = en ? "This alert is disabled in settings" : "Ten alert jest wyłączony w ustawieniach";
+
+        gLateral = en ? "Lateral" : "Boczne";
+        gLongitudinal = en ? "Longitudinal" : "Wzdłużne";
+        gMaxLatPlus = en ? "Max lateral +" : "Maks. boczne +";
+        gMaxLatMinus = en ? "Max lateral −" : "Maks. boczne −";
+        gMaxAccel = en ? "Max acceleration" : "Maks. przyspieszanie";
+        gMaxBrake = en ? "Max braking" : "Maks. hamowanie";
+        gMaxCombined = en ? "Max combined" : "Maks. łącznie";
+        gAccelShort = en ? "ACCEL" : "PRZYSP.";
+        gBrakeShort = en ? "BRAKE" : "HAM.";
+        gSignNote = en ? "Axis directions to be confirmed in the car" : "Kierunki osi do potwierdzenia w aucie";
+        resetG = "RESET G";
+        gNoData = en ? "No G-force signals" : "Brak sygnałów przeciążeń";
+        perfTitle = en ? "TIMING" : "POMIARY";
 
         alertNames = en
                 ? new String[]{"Coolant overheating", "Oil overheating", "Low oil pressure", "Oil pressure below normal",
@@ -348,6 +395,18 @@ public final class Strings {
 
     public String newResult(String run, String result) {
         return (en ? "New result: " : "Nowy wynik: ") + run + "  " + result;
+    }
+
+    public String snoozed(String remaining) {
+        return (en ? "snoozed " : "wyciszony ") + remaining;
+    }
+
+    public String ago(long ms) {
+        long min = ms / 60000;
+        if (min < 1) return en ? "just now" : "przed chwilą";
+        if (min < 60) return en ? min + " min ago" : min + " min temu";
+        long h = min / 60;
+        return en ? h + " h ago" : h + " godz. temu";
     }
 
     public String recTab(String duration) {

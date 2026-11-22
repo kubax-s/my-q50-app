@@ -14,6 +14,7 @@ public final class Analytics {
     public final TripStats trip = new TripStats();
     public final PerfTimer perf = new PerfTimer();
     public final Dyno dyno = new Dyno();
+    public final GMeter gMeter = new GMeter();
     public final TurboCooldown turbo = new TurboCooldown();
     public final WarmUp warmUp = new WarmUp();
     public final OilPressureMonitor oil = new OilPressureMonitor();
@@ -31,6 +32,7 @@ public final class Analytics {
         trip.update(s);
         perf.update(s);
         dyno.update(s);
+        gMeter.update(s);
         turbo.update(s);
         warmUp.update(s);
         oil.update(s);

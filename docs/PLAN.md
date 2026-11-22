@@ -156,15 +156,16 @@ Principles:
 - [ ] Confirm scales (compare with the gauges and the trip computer).
 - [ ] Output: `docs/sensor-map.md` + the map config file.
 
-### Stage 3 – Dashboard MVP ✅ (v0.3, not yet tested in the car)
-- [x] Overview with configurable tiles, **Health**, **Performance** and **Trip** pages.
+### Stage 3 – Dashboard MVP ✅ (v0.4, not yet tested in the car)
+- [x] Overview with configurable tiles, **Alerts**, **Engine**, **Trip** and **G-meter** pages.
 - [x] Metric units, dark theme, large fonts, one-tap operation; Polish/English UI.
 
-### Stage 4 – Health, alerts, performance, logs (v0.3, not yet tested in the car)
+### Stage 4 – Health, alerts, performance, logs (v0.4, not yet tested in the car)
 - [x] Alerts with on/off delays, hysteresis, snooze, per-alert enable switch, optional sound.
 - [x] Oil pressure baseline per 500 rpm, warm-up times, turbo cool-down estimate, tyre asymmetry and slow-leak check.
 - [x] 0–100, 1/4 mile, 60–100, 80–120, 100–200, 100–0 timing with records; "dyno" from the torque/power sensors.
 - [x] Trip computer (distance, times, maxima, RPM bands, gears).
+- [x] G-meter: friction circle, trail, per-direction envelope, maxima; alert history.
 - [ ] Tune thresholds once the signal scales are confirmed on the car.
 - [ ] Per-trip CSV logs (automatic start/stop).
 

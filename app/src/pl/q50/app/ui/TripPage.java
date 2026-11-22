@@ -9,16 +9,19 @@ import pl.q50.app.i18n.Strings;
 import pl.q50.app.logic.Analytics;
 import pl.q50.app.logic.TripStats;
 
-/** Trip computer since app start or the last reset. */
+/** Trip: trip computer, acceleration/braking timing, time in RPM bands and gears. */
 final class TripPage implements Page {
     private static final String[] GEAR_NAMES = {"P", "R", "N", "D", "M1", "M2", "M3", "M4", "M5", "M6", "M7"};
     private static final String[] BAND_NAMES = {"<2k", "2–3k", "3–4k", "4–5k", "5k+"};
 
     private final Analytics an;
-    private final RectF resetBtn = new RectF();
+    private final AppHost host;
+    private final RectF resetTrip = new RectF();
+    private final RectF resetRecords = new RectF();
 
-    TripPage(Analytics analytics) {
+    TripPage(Analytics analytics, AppHost host) {
         this.an = analytics;
+        this.host = host;
     }
 
     public String title() {
@@ -32,7 +35,7 @@ final class TripPage implements Page {
         Strings t = Strings.get();
         TripStats tr = an.trip;
         float gap = th.px(8);
-        float lw = (a.width() - gap) * 0.46f;
+        float lw = (a.width() - gap) * 0.36f;
         float l = a.left;
         float r = a.left + lw;
         th.panel(c, l, a.top, r, a.bottom, Theme.PANEL);
@@ -45,67 +48,49 @@ final class TripPage implements Page {
                 {t.tripDistance, Fmt.number(tr.distanceKm(), 1) + " km"},
                 {t.tripAvgSpeed, unit(tr.avgSpeed(), 0, " km/h")},
                 {t.tripMaxSpeed, unit(tr.maxSpeed, 0, " km/h")},
-                {t.tripMaxRpm, unit(tr.maxRpm, 0, " rpm")},
+                {t.tripMaxRpm, unit(tr.maxRpm, 0, "")},
                 {t.tripMaxPower, unit(tr.maxPower, 0, power)},
                 {t.tripMaxTorque, unit(tr.maxTorque, 0, " Nm")},
-                {t.tripMaxGLat, unit(tr.maxGLat, 2, " g")},
-                {t.tripGLong, Fmt.number(tr.maxGPlus, 2) + " / " + Fmt.number(tr.maxGMinus, 2)},
                 {t.tripMaxCoolant, unit(tr.maxCoolant, 0, " °C")},
                 {t.tripMaxOil, unit(tr.maxOilTemp, 0, " °C")},
                 {t.tripSpirited, Float.isNaN(tr.spiritedShare()) ? "—" : Fmt.number(tr.spiritedShare() * 100, 0) + " %"},
         };
-        float rowH = Math.min(th.px(22), (a.height() - th.px(64)) / rows.length);
-        float y = a.top + th.px(8) + rowH;
-        Paint k = th.text(14, Theme.DIM, Paint.Align.LEFT);
-        Paint v = th.bold(14, Theme.TEXT, Paint.Align.RIGHT);
+        float btnH = th.px(36);
+        float rowH = Math.min(th.px(24), (a.height() - btnH - th.px(20)) / rows.length);
+        float y = a.top + th.px(4) + rowH;
+        Paint k = th.text(13, Theme.DIM, Paint.Align.LEFT);
+        Paint v = th.bold(13, Theme.TEXT, Paint.Align.RIGHT);
         for (int i = 0; i < rows.length; i++) {
-            c.drawText(rows[i][0], l + th.px(12), y, k);
-            c.drawText(rows[i][1], r - th.px(12), y, v);
+            float vw = v.measureText(rows[i][1]);
+            c.drawText(Theme.fit(k, rows[i][0], lw - vw - th.px(30)), l + th.px(10), y, k);
+            c.drawText(rows[i][1], r - th.px(10), y, v);
             y += rowH;
         }
-        resetBtn.set(l + th.px(12), a.bottom - th.px(44), r - th.px(12), a.bottom - th.px(8));
-        th.button(c, resetBtn, t.resetTrip, Theme.PANEL_HI, Theme.TEXT, 14);
+        resetTrip.set(l + th.px(10), a.bottom - btnH - th.px(6), r - th.px(10), a.bottom - th.px(6));
+        th.button(c, resetTrip, t.resetTrip, Theme.PANEL_HI, Theme.TEXT, 13);
 
+        // right side: timing on top, time bars below
         float rl = r + gap;
-        float half = (a.height() - gap) / 2;
-        bars(c, th, t.rpmBandsTitle, BAND_NAMES, tr.rpmBandMs, rl, a.top, a.right, a.top + half);
-        bars(c, th, t.gearsTitle, GEAR_NAMES, tr.gearMs, rl, a.top + half + gap, a.right, a.bottom);
+        float perfB = a.top + (a.height() - gap) * 0.58f;
+        Panels.perf(c, th, an, rl, a.top, a.right, perfB, now, resetRecords);
+        float bt = perfB + gap;
+        float bw = (a.right - rl - gap) * 0.4f;
+        Panels.timeBars(c, th, t.rpmBandsTitle, BAND_NAMES, tr.rpmBandMs, rl, bt, rl + bw, a.bottom);
+        Panels.timeBars(c, th, t.gearsTitle, GEAR_NAMES, tr.gearMs, rl + bw + gap, bt, a.right, a.bottom);
     }
 
     private static String unit(float v, int decimals, String unit) {
         return Float.isNaN(v) ? "—" : Fmt.number(v, decimals) + unit;
     }
 
-    /** Vertical bars of time shares. */
-    private static void bars(Canvas c, Theme th, String title, String[] names, long[] ms, float l, float t, float r, float b) {
-        th.panel(c, l, t, r, b, Theme.PANEL);
-        c.drawText(title, l + th.px(12), t + th.px(20), th.bold(13, Theme.DIM, Paint.Align.LEFT));
-        long total = 0;
-        for (int i = 0; i < ms.length; i++) total += ms[i];
-        float cl = l + th.px(12);
-        float cr = r - th.px(12);
-        float ct = t + th.px(40);
-        float cb = b - th.px(22);
-        float slot = (cr - cl) / names.length;
-        Paint np = th.text(11, Theme.DIM, Paint.Align.CENTER);
-        Paint pp = th.bold(11, Theme.TEXT, Paint.Align.CENTER);
-        for (int i = 0; i < names.length; i++) {
-            float share = total > 0 ? ms[i] / (float) total : 0f;
-            float x0 = cl + i * slot + th.px(3);
-            float x1 = cl + (i + 1) * slot - th.px(3);
-            float top = cb - (cb - ct - th.px(14)) * share;
-            th.fill.setColor(share > 0 ? Theme.ACCENT : Theme.LINE);
-            c.drawRect(x0, share > 0 ? top : cb - th.px(2), x1, cb, th.fill);
-            c.drawText(names[i], (x0 + x1) / 2, cb + th.px(14), np);
-            if (share >= 0.005f) {
-                c.drawText(Fmt.number(share * 100, 0) + "%", (x0 + x1) / 2, top - th.px(3), pp);
-            }
-        }
-    }
-
     public boolean onTap(float x, float y) {
-        if (resetBtn.contains(x, y)) {
+        if (resetTrip.contains(x, y)) {
             an.trip.reset();
+            return true;
+        }
+        if (resetRecords.contains(x, y)) {
+            an.perf.resetBest();
+            host.analyticsChanged();
             return true;
         }
         return false;

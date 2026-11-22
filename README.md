@@ -4,20 +4,21 @@ An app for the factory **InTouch** head unit in the Infiniti Q50 (V37, MY2014–
 
 Plan and analysis: [`docs/PLAN.md`](docs/PLAN.md).
 
-## Version 0.3
+## Version 0.4
 
 | Tab | What it shows |
 |---|---|
 | **PRZEGLĄD** (overview) | Big tiles: RPM, speed, gear, throttle, coolant and oil temperature, oil pressure, torque, power, G-forces, all 4 tyres, with max values. Tiles can be hidden in settings; the grid re-flows |
-| **ZDROWIE** (health) | Warm-up state and warm-up times, turbo cool-down timer, oil pressure vs. a baseline learned per 500 rpm, tyre pressures vs. the average and slow-leak check |
-| **OSIĄGI** (performance) | Automatic 0–100, 1/4 mile (+ trap speed), 60–100, 80–120, 100–200 km/h and 100–0 braking distance, with last and best results; "dyno" power/torque curve from full-throttle pulls |
-| **PRZEJAZD** (trip) | Time, driving/idle time, distance, average and max speed, max RPM/power/torque/G/temperatures, share of spirited driving, time in RPM bands and in each gear |
+| **ALERTY** (alerts) | State of every alert (tap an active one to snooze/unsnooze), recent alert history, tyre pressures vs. the average and slow-leak check |
+| **SILNIK** (engine) | Warm-up state and times, turbo cool-down timer, oil pressure vs. a baseline learned per 500 rpm, "dyno" power/torque curve from full-throttle pulls |
+| **TRASA** (trip) | Trip computer (time, driving/idle, distance, average/max speed, max RPM/power/torque/temperatures, spirited share); automatic 0–100, 1/4 mile, 60–100, 80–120, 100–200 km/h and 100–0 braking with last/best; time in RPM bands and in each gear |
+| **G-METR** (G-meter) | Friction circle with live dot, 5 s trail and the envelope of the maximum reached in each direction; current and maximum lateral/acceleration/braking/combined G |
 | **SENSORY** (sensors) | Every sensor the head unit exposes: type, name, values `v0–v2`, update rate, observed min…max. Tapping a row shows a 20 s chart |
 | **LOG** | CSV logging (10 rows/s, all sensors), markers (button or long-press anywhere), choice of storage |
 | **USTAWIENIA** (settings) | Language (Polish / English), which overview tiles are shown, which alerts are enabled, alert sound |
 
 ### Alerts
-Shown as a banner at the bottom of every tab; tapping it snoozes that alert for 5 minutes. Each one can be switched off in settings.
+Shown as a banner at the bottom of every tab; tapping it snoozes that alert for 5 minutes (the ALERTY tab can undo that). Each one can be switched off in settings.
 
 | Alert | Condition |
 |---|---|

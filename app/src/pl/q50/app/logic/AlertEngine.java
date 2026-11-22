@@ -49,7 +49,25 @@ public final class AlertEngine {
         }
     }
 
+    /** One raised alert, for the history list. */
+    public static final class Event {
+        public final String id;
+        public final int severity;
+        public final String text;
+        public final long at;
+
+        Event(String id, int severity, String text, long at) {
+            this.id = id;
+            this.severity = severity;
+            this.text = text;
+            this.at = at;
+        }
+    }
+
+    public static final int HISTORY = 20;
+
     private final Alert[] alerts = new Alert[IDS.length];
+    private final List<Event> history = new ArrayList<Event>();
     private final List<Alert> visible = new ArrayList<Alert>();
     /** Highest severity of alerts that became visible in the last update, or -1. */
     public int raisedSeverity = -1;
@@ -94,7 +112,13 @@ public final class AlertEngine {
             if (a.condition) {
                 a.clearSince = -1;
                 if (a.condSince < 0) a.condSince = now;
-                if (now - a.condSince >= ON_DELAY_MS[i]) a.active = true;
+                if (!a.active && now - a.condSince >= ON_DELAY_MS[i]) {
+                    a.active = true;
+                    if (settings == null || settings.isAlertEnabled(a.id)) {
+                        history.add(0, new Event(a.id, a.severity, a.text, now));
+                        while (history.size() > HISTORY) history.remove(history.size() - 1);
+                    }
+                }
             } else {
                 a.condSince = -1;
                 if (a.active) {
@@ -128,6 +152,19 @@ public final class AlertEngine {
 
     public List<Alert> visible() {
         return visible;
+    }
+
+    /** Most recent first. */
+    public List<Event> history() {
+        return history;
+    }
+
+    public long snoozeRemainingMs(String id, long now) {
+        return Math.max(0, get(id).snoozedUntil - now);
+    }
+
+    public void unsnooze(String id) {
+        get(id).snoozedUntil = 0;
     }
 
     public void snooze(String id, long now) {

@@ -66,14 +66,19 @@ public final class RootView extends View {
         LogPage logPage = new LogPage(hub, logger, host);
         pages = new Page[]{
                 new OverviewPage(hub, analytics.settings),
-                new HealthPage(analytics),
-                new PerformancePage(analytics, host),
-                new TripPage(analytics),
+                new AlertsPage(analytics, host),
+                new EnginePage(analytics),
+                new TripPage(analytics, host),
+                new GMeterPage(analytics.gMeter),
                 new SensorsPage(hub),
                 logPage,
                 new SettingsPage(hub, analytics.settings, host),
         };
-        logIndex = 5;
+        int log = 0;
+        for (int i = 0; i < pages.length; i++) {
+            if (pages[i] == logPage) log = i;
+        }
+        logIndex = log;
         tabRects = new RectF[pages.length];
         for (int i = 0; i < pages.length; i++) {
             tabRects[i] = new RectF();
@@ -122,8 +127,8 @@ public final class RootView extends View {
             }
             th.fill.setColor(sel ? Theme.PANEL_HI : Theme.BG);
             c.drawRoundRect(r, th.px(8), th.px(8), th.fill);
-            Paint p = th.bold(14, fg, Paint.Align.CENTER);
-            c.drawText(Theme.fit(p, title, r.width() - th.px(6)), r.centerX(),
+            Paint p = th.bold(13, fg, Paint.Align.CENTER);
+            c.drawText(Theme.fit(p, title, r.width() - th.px(4)), r.centerX(),
                     r.centerY() - (p.ascent() + p.descent()) / 2, p);
             if (sel) {
                 th.fill.setColor(Theme.ACCENT);

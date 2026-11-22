@@ -26,7 +26,7 @@ import pl.q50.app.logic.Settings;
 import pl.q50.app.logic.Snapshot;
 import pl.q50.app.logic.Store;
 import pl.q50.app.ui.AppHost;
-import pl.q50.app.ui.PerformancePage;
+import pl.q50.app.ui.Panels;
 import pl.q50.app.ui.RootView;
 
 /**
@@ -103,7 +103,7 @@ public final class MainActivity extends Activity {
             shownResultAt = perf.lastCompletedAt;
             Strings t = Strings.get();
             root.message(t.newResult(t.runNames[perf.lastCompleted],
-                    PerformancePage.result(perf.lastCompleted, perf.last[perf.lastCompleted])));
+                    Panels.result(perf.lastCompleted, perf.last[perf.lastCompleted])));
             analytics.save(store);
         }
         int raised = analytics.alerts.raisedSeverity;

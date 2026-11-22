@@ -31,6 +31,8 @@ public final class LogicTest {
         dyno();
         settings();
         warmUp();
+        gMeter();
+        alertHistory();
         if (failures > 0) {
             System.out.println(failures + " FAILED");
             System.exit(1);
@@ -278,6 +280,52 @@ public final class LogicTest {
         s.oilTemp = 40;
         s.rpm = 4500;
         check(WarmUp.coldOilUnderLoad(s), "cold oil at 4500 rpm");
+    }
+
+    static void gMeter() {
+        GMeter g = new GMeter();
+        Snapshot s = new Snapshot();
+        float[][] pts = {{0.8f, 0f}, {-0.6f, 0f}, {0f, 0.4f}, {0f, -0.9f}, {0.5f, 0.5f}};
+        for (int i = 0; i < pts.length; i++) {
+            s.gLat = pts[i][0];
+            s.gLong = pts[i][1];
+            g.update(s);
+        }
+        near("max lat + x100", 80, Math.round(g.maxLatPlus * 100), 0);
+        near("max lat - x100", 60, Math.round(g.maxLatMinus * 100), 0);
+        near("max accel x100", 50, Math.round(g.maxAccel * 100), 0);
+        near("max brake x100", 90, Math.round(g.maxBrake * 100), 0);
+        near("max combined x100", 90, Math.round(g.maxCombined * 100), 0);
+        check(GMeter.sector(1f, 0f) == 0, "sector of +lat");
+        check(GMeter.sector(0f, 1f) == 9, "sector of +lon (90 deg)");
+        check(GMeter.sector(0f, -1f) == 27, "sector of -lon (270 deg)");
+        near("envelope at 45 deg x100", 71, Math.round(g.sectorMax[GMeter.sector(0.5f, 0.5f)] * 100), 0);
+        check(g.trailCount() == 5 && g.trailLat(0) == 0.8f && g.trailLon(4) == 0.5f, "trail order");
+        s.gLat = Float.NaN;
+        g.update(s);
+        check(g.trailCount() == 5, "NaN not added to trail");
+        g.reset();
+        check(Float.isNaN(g.maxCombined) && g.sectorMax[0] == 0f, "reset");
+    }
+
+    static void alertHistory() {
+        AlertEngine e = new AlertEngine();
+        Settings settings = new Settings();
+        e.set(AlertEngine.OIL_HOT, true, "Olej 127 °C");
+        e.update(0, settings);
+        e.update(2500, settings);
+        e.update(5000, settings);
+        check(e.history().size() == 1 && e.history().get(0).text.equals("Olej 127 °C"), "history records once");
+        e.snooze(AlertEngine.OIL_HOT, 5000);
+        check(e.snoozeRemainingMs(AlertEngine.OIL_HOT, 6000) == AlertEngine.SNOOZE_MS - 1000, "snooze remaining");
+        e.unsnooze(AlertEngine.OIL_HOT);
+        e.update(6000, settings);
+        check(e.visible().size() == 1, "unsnoozed");
+        settings.toggleAlert(AlertEngine.TYRE_LOW);
+        e.set(AlertEngine.TYRE_LOW, true, "x");
+        e.update(7000, settings);
+        e.update(13000, settings);
+        check(e.history().size() == 1, "disabled alerts are not recorded");
     }
 
     private static void near(String what, long expected, long actual, long tolerance) {
