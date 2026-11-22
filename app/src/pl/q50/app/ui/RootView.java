@@ -44,6 +44,10 @@ public final class RootView extends View {
     private final RectF bannerOk = new RectF();
     private final Handler handler = new Handler();
     private final int sensorsIndex;
+    private final int settingsIndex;
+    private final android.graphics.Path gearPath = new android.graphics.Path();
+    /** Width of the icon-only settings tab (design px). */
+    private static final float GEAR_TAB_W = 56;
     private Bitmap tabCache;
     private int tabKey = Integer.MIN_VALUE;
     private int current;
@@ -90,6 +94,11 @@ public final class RootView extends View {
             if (pages[i] instanceof SensorsPage) sensors = i;
         }
         sensorsIndex = sensors;
+        int settingsAt = pages.length - 1;
+        for (int i = 0; i < pages.length; i++) {
+            if (pages[i] instanceof SettingsPage) settingsAt = i;
+        }
+        settingsIndex = settingsAt;
         tabRects = new RectF[pages.length];
         for (int i = 0; i < pages.length; i++) {
             tabRects[i] = new RectF();
@@ -194,15 +203,32 @@ public final class RootView extends View {
     }
 
     private void drawTabs(Canvas c, long now, Strings t) {
-        // equal-width tabs across the full width
+        // text tabs share the width equally; the settings tab is a narrow gear icon
         float gap = th.px(4);
         float left = th.px(MARGIN);
-        float tabW = (getWidth() - 2 * left - gap * (pages.length - 1)) / pages.length;
+        float gearW = th.px(GEAR_TAB_W);
+        int textTabs = pages.length - 1;
+        float tabW = (getWidth() - 2 * left - gap * (pages.length - 1) - gearW) / textTabs;
         float tabBottom = th.px(TAB_H);
+        float x = left;
         for (int i = 0; i < pages.length; i++) {
             RectF r = tabRects[i];
-            r.set(left + i * (tabW + gap), th.px(6), left + i * (tabW + gap) + tabW, tabBottom - th.px(6));
+            boolean gearTab = i == settingsIndex;
+            float w = gearTab ? gearW : tabW;
+            r.set(x, th.px(6), x + w, tabBottom - th.px(6));
+            x += w + gap;
             boolean sel = i == current;
+            if (gearTab) {
+                th.fill.setColor(sel ? Theme.PANEL_HI : Theme.BG);
+                c.drawRoundRect(r, th.px(8), th.px(8), th.fill);
+                drawGear(c, r.centerX(), r.centerY() - th.px(1), th.px(12), sel ? Theme.ACCENT : Theme.DIM,
+                        sel ? Theme.PANEL_HI : Theme.BG);
+                if (sel) {
+                    th.fill.setColor(Theme.ACCENT);
+                    c.drawRect(r.left + th.px(10), r.bottom - th.px(3), r.right - th.px(10), r.bottom, th.fill);
+                }
+                continue;
+            }
             String title = pages[i].title();
             int fg = sel ? Theme.ACCENT : Theme.DIM;
             if (i == logIndex && logger.isActive()) {
@@ -223,6 +249,27 @@ public final class RootView extends View {
             }
         }
 
+    }
+
+    /** Gear icon: a body, eight teeth and a hole (drawn in the tab colour behind it). */
+    private void drawGear(Canvas c, float cx, float cy, float outer, int color, int holeColor) {
+        float body = outer * 0.74f;
+        th.fill.setColor(color);
+        c.drawCircle(cx, cy, body, th.fill);
+        for (int i = 0; i < 8; i++) {
+            double a = i * Math.PI / 4;
+            double inner = 0.30;   // half-width of a tooth at its root (radians)
+            double tip = 0.20;     // half-width at its tip
+            gearPath.reset();
+            gearPath.moveTo(cx + (float) Math.cos(a - inner) * body * 0.9f, cy + (float) Math.sin(a - inner) * body * 0.9f);
+            gearPath.lineTo(cx + (float) Math.cos(a - tip) * outer, cy + (float) Math.sin(a - tip) * outer);
+            gearPath.lineTo(cx + (float) Math.cos(a + tip) * outer, cy + (float) Math.sin(a + tip) * outer);
+            gearPath.lineTo(cx + (float) Math.cos(a + inner) * body * 0.9f, cy + (float) Math.sin(a + inner) * body * 0.9f);
+            gearPath.close();
+            c.drawPath(gearPath, th.fill);
+        }
+        th.fill.setColor(holeColor);
+        c.drawCircle(cx, cy, outer * 0.32f, th.fill);
     }
 
     private void drawBanner(Canvas c, List<AlertEngine.Alert> alerts, Strings t) {

@@ -15,7 +15,7 @@ Plan and analysis: [`docs/PLAN.md`](docs/PLAN.md).
 | **G-METR** (G-meter) | Friction circle with live dot, 5 s trail and the envelope of the maximum reached in each direction; current and maximum lateral/acceleration/braking/combined G |
 | **SENSORY** (sensors) | Every sensor the head unit exposes: type, name, values `v0–v2`, update rate, observed min…max. Tapping a row shows a 20 s chart |
 | **LOG** | CSV logging (10 rows/s, all sensors), markers (button or long-press anywhere), choice of storage |
-| **USTAWIENIA** (settings) | Three sections: **general** (language, theme: dark / black / graphite / light, accent colour from 7 swatches), **tiles** (what the overview shows), **alerts** (which alerts are on, alert sound). Status colours (red / orange / green / blue) never change with the theme, so warnings keep their meaning |
+| **⚙** (settings, gear icon) | Three sections: **general** (language, theme: dark / black / graphite / light, accent colour from 7 swatches), **tiles** (what the overview shows), **alerts** (which alerts are on, alert sound). Status colours (red / orange / green / blue) never change with the theme, so warnings keep their meaning |
 
 ### Alerts
 Shown as a banner at the bottom of every tab; tapping it snoozes that alert for 5 minutes (the ALERTY tab can undo that). Each one can be switched off in settings.
