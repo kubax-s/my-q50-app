@@ -3,3 +3,4 @@ build/
 signing/
 *.keystore
 *.jks
+app/icon-override.png

@@ -9,12 +9,15 @@
 #   KEYSTORE        signing keystore (default: signing/q50.keystore, created on first run)
 #   KEYSTORE_PASS   keystore + key password (default: "android")
 #   KEY_ALIAS       key alias (default: "q50")
+#
+# Icon: app/res/drawable/ic_launcher.png (from tools/icon/MakeIcon.java). To use your own image
+# instead, put a square PNG at app/icon-override.png (git-ignored); it is scaled to 96×96.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 APP=app
 OUT=build
-NAME=q50-monitor
+NAME=my-q50
 CACHE="$OUT/cache"
 ANDROID_JAR_URL="https://repo1.maven.org/maven2/com/google/android/android/2.3.3/android-2.3.3.jar"
 ANDROID_JAR_SHA1="949a2bef1ffe62e81af5d8919d17dfcc1309c43c"
@@ -68,9 +71,17 @@ else
   "$DX_BIN" --dex --min-sdk-version=10 --output="$OUT/dex/classes.dex" "$OUT/classes"
 fi
 
+RES="$APP/res"
+if [ -f "$APP/icon-override.png" ]; then
+  step "icon: using app/icon-override.png"
+  rm -rf "$OUT/res" && cp -r "$APP/res" "$OUT/res"
+  java -Djava.awt.headless=true tools/icon/ScaleIcon.java "$APP/icon-override.png" 96 "$OUT/res/drawable/ic_launcher.png"
+  RES="$OUT/res"
+fi
+
 step "package (versionCode $VERSION_CODE)"
 sed "s/android:versionCode=\"[0-9]*\"/android:versionCode=\"$VERSION_CODE\"/" "$APP/AndroidManifest.xml" > "$OUT/AndroidManifest.xml"
-aapt package -f -M "$OUT/AndroidManifest.xml" -S "$APP/res" -A "$APP/assets" -I "$ANDROID_JAR" \
+aapt package -f -M "$OUT/AndroidManifest.xml" -S "$RES" -A "$APP/assets" -I "$ANDROID_JAR" \
   -F "$OUT/$NAME.unsigned.apk"
 (cd "$OUT/dex" && aapt add ../"$NAME".unsigned.apk classes.dex >/dev/null)
 zipalign -f -p 4 "$OUT/$NAME.unsigned.apk" "$OUT/$NAME.aligned.apk"

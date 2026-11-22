@@ -2,7 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="pl.q50.app"
     android:versionCode="1"
-    android:versionName="0.4.2">
+    android:versionName="0.4.3">
 
     <!-- InTouch App Garage runs a customized Android 2.3.7 (API 10, x86). -->
     <uses-sdk android:minSdkVersion="10" android:targetSdkVersion="10" />
@@ -13,7 +13,7 @@
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
 
     <application
-        android:label="Q50 Monitor"
+        android:label="My Q50"
         android:icon="@drawable/ic_launcher"
         android:allowBackup="false">
 
@@ -28,7 +28,7 @@
 
         <activity
             android:name=".MainActivity"
-            android:label="Q50 Monitor"
+            android:label="My Q50"
             android:theme="@android:style/Theme.Black.NoTitleBar"
             android:screenOrientation="landscape"
             android:configChanges="orientation|keyboardHidden"

@@ -325,7 +325,7 @@ public final class Preview {
             }
 
             public String versionText() {
-                return "0.4.2 (preview)";
+                return "0.4.3 (preview)";
             }
 
             public int vehicleSensorCount() {

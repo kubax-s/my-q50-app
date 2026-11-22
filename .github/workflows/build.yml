@@ -61,8 +61,8 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: q50-monitor-${{ github.run_number }}
+          name: my-q50-${{ github.run_number }}
           path: |
-            build/q50-monitor.epk
-            build/q50-monitor.apk
-            build/q50-monitor.sha256
+            build/my-q50.epk
+            build/my-q50.apk
+            build/my-q50.sha256

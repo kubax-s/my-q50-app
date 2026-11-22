@@ -30,7 +30,7 @@ import pl.q50.app.ui.Panels;
 import pl.q50.app.ui.RootView;
 
 /**
- * Q50 Monitor – reads the vehicle signals InTouch exposes as Android sensors.
+ * My Q50 – reads the vehicle signals InTouch exposes as Android sensors.
  * One 10 Hz tick drives history sampling, analytics (alerts, timing, trip), CSV logging and
  * redraws. It keeps running while the app is in the background, so trip statistics and the
  * turbo cool-down estimate stay correct when another app is on screen.
